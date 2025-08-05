@@ -26,7 +26,7 @@
 
       <h3>Mapping Arrays</h3>
       <p>Famous works:</p>
-      <ul>
+      <ul> 
         <!-- Activity 8: Render a list of all famous works. Hint: Use the v-for directive to iterate through the array of authors that you have filtered out. -->
         <ul>
   <li v-for="work in allFamousWorks" :key="work">
@@ -56,7 +56,7 @@
       <p>
         Company:
         <!-- Activity 9a: Get the company name from the bookstores object. -->
-        <!-- TODO: CODE TO GET COMPANY NAME HERE --> 
+        <!-- TODO: CODE TO GET COMPANY NAME HERE -->
       </p>
 
       <p>
