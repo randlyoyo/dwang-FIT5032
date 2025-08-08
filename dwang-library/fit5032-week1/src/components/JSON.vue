@@ -26,7 +26,7 @@
 
       <h3>Mapping Arrays</h3>
       <p>Famous works:</p>
-      <ul>
+      <ul> 
         <!-- Activity 8: Render a list of all famous works. Hint: Use the v-for directive to iterate through the array of authors that you have filtered out. -->
         <ul>
   <li v-for="work in allFamousWorks" :key="work">
@@ -88,8 +88,10 @@
       <!-- Activity 13: Toggle the message visibility when the button is clicked. -->
       <!-- TODO: CODE TO TOGGLE MESSAGE VISIBILITY HERE. Hint: Use the v-if directive. -->
       <button @click="showMessage = !showMessage">Toggle Message</button>
-      <p class="message success">✨ You're a Vue superstar! ✨</p>
-      <p>Click the button to see a message.</p>
+<p v-if="showMessage" class="message success">
+  ✨ You're a Vue superstar! ✨
+</p>
+<p v-else class="message">Click the button to see a message.</p>
     </section>
 
     <section class="lab-section">
@@ -105,8 +107,8 @@ import { ref, computed } from "vue"
 
 // Activity 1: Import JSON files (authors.json and bookstores.json)
 // TODO: CODE TO IMPORT JSON FILES HERE
-import authors from "./assets//json/authors.json"
-import bookstores from "./assets/json/bookstores.json"
+import authors from "../assets//json/authors.json"
+import bookstores from "../assets/json/bookstores.json"
 const showMessage = ref(false)
 
 // Activity 2: Get authors born after 1850
