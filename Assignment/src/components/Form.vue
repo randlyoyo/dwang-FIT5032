@@ -117,6 +117,8 @@
     </div>
   </div>
 
+
+  
   <!-- Participants Display Section -->
   <div class="container mt-5" v-if="submittedCards.length > 0">
     <div class="row">
