@@ -1,51 +1,59 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-import MyName from './components/MyName.vue'
-import JSON from './components/JSON.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <MyName />
-      <HelloWorld msg="You did it!!!" />
+  <div id="app">
+    <!-- Header -->
+    <div class="header">
+      <h1>Nutrition Connect</h1>
+      <p>Simple nutrition education platform</p>
     </div>
-  </header>
 
-  <main>
-    <TheWelcome />
-    <JSON />
-  </main>
+    <!-- Navigation -->
+    <div class="nav">
+      <button class="nav-btn" :class="{ active: activePage === 'home' }" @click="setActivePage('home')">Home</button>
+      <button class="nav-btn" :class="{ active: activePage === 'signup' }" @click="setActivePage('signup')">Sign Up</button>
+    </div>
+
+    <!-- Page Content -->
+    <Home v-if="activePage === 'home'" @save-recipe="saveRecipe" />
+    <SignUp v-else-if="activePage === 'signup'" />
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-}
+<script>
+import Home from './components/Home.vue'
+import SignUp from './components/SignUp.vue'
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+export default {
+  name: 'App',
+  components: {
+    Home,
+    SignUp
+  },
+  data() {
+    return {
+      activePage: 'home',
+      savedRecipes: []
+    }
+  },
+  methods: {
+    setActivePage(page) {
+      this.activePage = page
+    },
+    saveRecipe(recipe) {
+      if (!this.savedRecipes.some(r => r.id === recipe.id)) {
+        this.savedRecipes.push(recipe)
+        localStorage.setItem('savedRecipes', JSON.stringify(this.savedRecipes))
+        alert(`Saved "${recipe.title}" to your recipes!`)
+      } else {
+        alert('This recipe is already saved.')
+      }
+    }
+  },
+  mounted() {
+    // Load saved recipes from localStorage
+    const saved = localStorage.getItem('savedRecipes')
+    if (saved) {
+      this.savedRecipes = JSON.parse(saved)
+    }
   }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
 }
-</style>
+</script>
