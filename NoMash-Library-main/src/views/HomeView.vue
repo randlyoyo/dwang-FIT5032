@@ -9,7 +9,8 @@ const formData = ref({
   confirmPassword: '',
   isAustralian: false,
   reason: '',
-  gender: ''
+  gender: '',
+  suburb: 'Clayton'
 })
 
 const submittedCards = ref([])
@@ -72,6 +73,13 @@ const validatePassword = (blur) => {
     errors.value.password = null
   }
 }
+const validateConfirmPassword = (blur) => {
+  if (formData.value.password !== formData.value.confirmPassword) {
+    if (blur) errors.value.confirmPassword = 'Passwords do not match.'
+  } else {
+    errors.value.confirmPassword = null
+  }
+}
 </script>
 
 <template>
@@ -88,7 +96,7 @@ const validatePassword = (blur) => {
           <div class="row mb-3">
             <div class="col-md-6 col-sm-6">
               <label for="username" class="form-label">Username</label>
-              <input
+              d<input
                 type="text"
                 class="form-control"
                 id="username"
@@ -118,6 +126,7 @@ const validatePassword = (blur) => {
                 class="form-control"
                 id="confirm-password"
                 v-model="formData.confirmPassword"
+                @blur="() => validateConfirmPassword(true)"
               />
               <div v-if="errors.confirmPassword" class="text-danger">
                 {{ errors.confirmPassword }}
@@ -154,6 +163,10 @@ const validatePassword = (blur) => {
               v-model="formData.reason"
             ></textarea>
           </div>
+            <div class="mb-3">
+            <label for="reason" class="form-label">Suburb</label>
+            <input type="text" class="form-control" id="suburb" v-bind:value="formData.suburb" />
+          </div>
           <div class="text-center">
             <button type="submit" class="btn btn-primary me-2">Submit</button>
             <button type="button" class="btn btn-secondary" @click="clearForm">Clear</button>
@@ -162,6 +175,7 @@ const validatePassword = (blur) => {
       </div>
     </div>
   </div>
+
 
   <div class="row mt-5">
     <h4>This is a Primevue Datatable.</h4>
