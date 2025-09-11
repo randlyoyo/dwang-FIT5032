@@ -5,6 +5,11 @@
       <div class="col-md-8 offset-md-2">
         <h1 class="text-center">Nutrition Education Program Registration</h1>
         <p class="text-center text-muted mb-4">Join our comprehensive nutrition education program and start your journey to better health</p>
+
+        <!-- Security Notice -->
+        <div class="alert alert-warning" role="alert">
+          <strong>Security Notice:</strong> This form uses client-side validation and XSS protection. All data is stored locally and securely validated.
+        </div>
         <form @submit.prevent="submitForm">
           <div class="row mb-3">
             <div class="col-sm-6">
@@ -118,7 +123,7 @@
   </div>
 
 
-  
+
   <!-- Participants Display Section -->
   <div class="container mt-5" v-if="submittedCards.length > 0">
     <div class="row">
@@ -163,9 +168,17 @@
                 </li>
               </ul>
               <div class="card-footer">
-                <button @click="removeCard(index)" class="btn btn-danger btn-sm">
-                  Remove
-                </button>
+                <div class="d-flex justify-content-between align-items-center">
+                  <button @click="removeCard(index)" class="btn btn-danger btn-sm">
+                    Remove
+                  </button>
+                  <button @click="toggleRating(index)" class="btn btn-outline-primary btn-sm">
+                    {{ showRating[index] ? 'Hide Rating' : 'Rate Participant' }}
+                  </button>
+                </div>
+                <div v-if="showRating[index]" class="mt-3">
+                  <Rating :participant-id="card.id" />
+                </div>
               </div>
             </div>
           </div>
@@ -177,6 +190,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import Rating from './Rating.vue';
 
 const formData = ref({
     username: '',
@@ -189,6 +203,7 @@ const formData = ref({
 });
 
 const submittedCards = ref([]);
+const showRating = ref({});
 
 // Load data from localStorage on component mount
 onMounted(() => {
@@ -248,6 +263,10 @@ const removeCard = (index) => {
     localStorage.setItem('nutritionParticipants', JSON.stringify(submittedCards.value));
 };
 
+const toggleRating = (index) => {
+    showRating.value[index] = !showRating.value[index];
+};
+
 const errors = ref({
     username: null,
     password: null,
@@ -256,8 +275,20 @@ const errors = ref({
     reason: null
 });
 
+// XSS Protection function
+const sanitizeInput = (input) => {
+    if (typeof input !== 'string') return input;
+    return input
+        .replace(/[<>]/g, '') // Remove < and > characters
+        .replace(/javascript:/gi, '') // Remove javascript: protocol
+        .replace(/on\w+=/gi, '') // Remove event handlers
+        .trim();
+};
+
 const validateName = (blur) => {
-    const username = formData.value.username.trim();
+    const username = sanitizeInput(formData.value.username);
+    formData.value.username = username; // Update with sanitized value
+
     if (username.length < 3) {
         if (blur) {
             errors.value.username = 'Full name must be at least 3 characters long.';
@@ -270,13 +301,20 @@ const validateName = (blur) => {
         } else {
             errors.value.username = null;
         }
+    } else if (!/^[a-zA-Z\s]+$/.test(username)) {
+        if (blur) {
+            errors.value.username = 'Full name can only contain letters and spaces.';
+        } else {
+            errors.value.username = null;
+        }
     } else {
         errors.value.username = null;
     }
 };
 
 const validateEmail = (blur) => {
-    const email = formData.value.password;
+    const email = sanitizeInput(formData.value.password);
+    formData.value.password = email; // Update with sanitized value
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!email) {
@@ -303,10 +341,16 @@ const validateAgeGroup = (blur) => {
 };
 
 const validateReason = (blur) => {
-    const reason = formData.value.reason.trim();
+    const reason = sanitizeInput(formData.value.reason);
+    formData.value.reason = reason; // Update with sanitized value
+
     if (reason.length < 10) {
         if (blur) {
             errors.value.reason = 'Please tell us more about your nutrition goals (at least 10 characters).';
+        }
+    } else if (reason.length > 500) {
+        if (blur) {
+            errors.value.reason = 'Please keep your response under 500 characters.';
         }
     } else {
         errors.value.reason = null;

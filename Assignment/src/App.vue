@@ -1,8 +1,37 @@
 <script setup>
 import Form from './components/Form.vue'
-import { ref } from 'vue'
+import Auth from './components/Auth.vue'
+import { ref, onMounted } from 'vue'
 
 const currentSection = ref('home')
+const currentUser = ref(null)
+const isAuthenticated = ref(false)
+
+onMounted(() => {
+  // Check if user is already logged in
+  const savedUser = localStorage.getItem('currentUser')
+  if (savedUser) {
+    currentUser.value = JSON.parse(savedUser)
+    isAuthenticated.value = true
+  }
+})
+
+const handleAuthentication = (user) => {
+  currentUser.value = user
+  isAuthenticated.value = true
+  currentSection.value = 'home'
+}
+
+const logout = () => {
+  currentUser.value = null
+  isAuthenticated.value = false
+  localStorage.removeItem('currentUser')
+  currentSection.value = 'home'
+}
+
+const isAdmin = () => {
+  return currentUser.value && currentUser.value.role === 'admin'
+}
 </script>
 
 <template>
@@ -17,8 +46,26 @@ const currentSection = ref('home')
         <div class="navbar-nav ms-auto">
           <a class="nav-link" :class="{ 'active': currentSection === 'home' }"
              href="#" @click="currentSection = 'home'">Home</a>
-          <a class="nav-link" :class="{ 'active': currentSection === 'form' }"
-             href="#" @click="currentSection = 'form'">Join Our Program</a>
+
+          <template v-if="isAuthenticated">
+            <a class="nav-link" :class="{ 'active': currentSection === 'form' }"
+               href="#" @click="currentSection = 'form'">Join Our Program</a>
+            <a v-if="isAdmin()" class="nav-link" :class="{ 'active': currentSection === 'admin' }"
+               href="#" @click="currentSection = 'admin'">Admin Panel</a>
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                {{ currentUser.fullName }} ({{ currentUser.role }})
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
+              </ul>
+            </div>
+          </template>
+
+          <template v-else>
+            <a class="nav-link" :class="{ 'active': currentSection === 'auth' }"
+               href="#" @click="currentSection = 'auth'">Login/Register</a>
+          </template>
         </div>
       </div>
     </nav>
@@ -39,8 +86,11 @@ const currentSection = ref('home')
                 and overall wellness.
               </p>
               <div class="d-flex gap-3">
-                <button class="btn btn-success btn-lg" @click="currentSection = 'form'">
+                <button v-if="isAuthenticated" class="btn btn-success btn-lg" @click="currentSection = 'form'">
                   Start Your Nutrition Journey
+                </button>
+                <button v-else class="btn btn-success btn-lg" @click="currentSection = 'auth'">
+                  Login to Get Started
                 </button>
               </div>
             </div>
@@ -53,9 +103,30 @@ const currentSection = ref('home')
         </div>
       </section>
 
+      <!-- Authentication Section -->
+      <section v-if="currentSection === 'auth'" class="py-5">
+        <Auth @authenticated="handleAuthentication" />
+      </section>
+
       <!-- Form Section -->
       <section v-if="currentSection === 'form'" class="py-5">
         <Form />
+      </section>
+
+      <!-- Admin Panel Section -->
+      <section v-if="currentSection === 'admin'" class="py-5">
+        <div class="container">
+          <div class="row">
+            <div class="col-12">
+              <h2 class="text-center mb-4">Admin Panel</h2>
+              <div class="alert alert-info">
+                <h5>Welcome, {{ currentUser.fullName }}!</h5>
+                <p>As an administrator, you have access to all participant data and can manage the system.</p>
+              </div>
+              <Form />
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
