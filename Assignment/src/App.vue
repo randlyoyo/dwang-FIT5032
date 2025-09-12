@@ -1,5 +1,5 @@
 <script setup>
-import Form from './components/Form.vue'
+import RecipeList from './components/RecipeList.vue'
 import Auth from './components/Auth.vue'
 import { ref, onMounted } from 'vue'
 
@@ -32,6 +32,15 @@ const logout = () => {
 const isAdmin = () => {
   return currentUser.value && currentUser.value.role === 'admin'
 }
+
+// Debug function to clear user data
+const clearUserData = () => {
+  localStorage.removeItem('currentUser')
+  localStorage.removeItem('users')
+  currentUser.value = null
+  isAuthenticated.value = false
+  alert('User data cleared! Please refresh the page.')
+}
 </script>
 
 <template>
@@ -40,7 +49,7 @@ const isAdmin = () => {
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
       <div class="container">
         <a class="navbar-brand fw-bold" href="#" @click="currentSection = 'home'">
-          🍎 Nutrition Education Hub
+          🍽️ Healthy Recipe Hub
         </a>
 
         <div class="navbar-nav ms-auto">
@@ -48,23 +57,37 @@ const isAdmin = () => {
              href="#" @click="currentSection = 'home'">Home</a>
 
           <template v-if="isAuthenticated">
-            <a class="nav-link" :class="{ 'active': currentSection === 'form' }"
-               href="#" @click="currentSection = 'form'">Join Our Program</a>
+            <a class="nav-link" :class="{ 'active': currentSection === 'recipes' }"
+               href="#" @click="currentSection = 'recipes'">Browse Recipes</a>
             <a v-if="isAdmin()" class="nav-link" :class="{ 'active': currentSection === 'admin' }"
                href="#" @click="currentSection = 'admin'">Admin Panel</a>
-            <div class="nav-item dropdown">
+
+            <!-- User info and logout button -->
+            <div class="nav-item dropdown me-2">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                {{ currentUser.fullName }} ({{ currentUser.role }})
+                👤 {{ currentUser.fullName }} ({{ currentUser.role }})
               </a>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" @click="logout">Logout</a></li>
+                <li><a class="dropdown-item" href="#" @click="logout">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </a></li>
               </ul>
             </div>
+
+            <!-- Prominent Logout Button -->
+            <button class="btn btn-outline-light btn-sm" @click="logout">
+              <i class="bi bi-box-arrow-right"></i> Logout
+            </button>
           </template>
 
           <template v-else>
-            <a class="nav-link" :class="{ 'active': currentSection === 'auth' }"
-               href="#" @click="currentSection = 'auth'">Login/Register</a>
+            <!-- Prominent Login Button -->
+            <button class="btn btn-outline-light btn-sm me-2" @click="currentSection = 'auth'">
+              <i class="bi bi-box-arrow-in-right"></i> Login
+            </button>
+            <button class="btn btn-light btn-sm" @click="currentSection = 'auth'">
+              <i class="bi bi-person-plus"></i> Register
+            </button>
           </template>
         </div>
       </div>
@@ -78,25 +101,25 @@ const isAdmin = () => {
           <div class="row align-items-center min-vh-100">
             <div class="col-lg-6">
               <h1 class="display-4 fw-bold text-success mb-4">
-                Empowering Communities Through Nutrition Education
+                Share & Discover Healthy Recipes
               </h1>
               <p class="lead mb-4">
-                We are dedicated to improving public health by providing comprehensive nutrition education,
-                healthy eating guidance, and community support programs to promote better dietary choices
-                and overall wellness.
+                Join our community of health-conscious food lovers! Share your favorite healthy recipes,
+                discover new nutritious meals, and get inspired by others' culinary creations.
+                Together, we can make healthy eating delicious and accessible for everyone.
               </p>
               <div class="d-flex gap-3">
-                <button v-if="isAuthenticated" class="btn btn-success btn-lg" @click="currentSection = 'form'">
-                  Start Your Nutrition Journey
+                <button v-if="isAuthenticated" class="btn btn-success btn-lg" @click="currentSection = 'recipes'">
+                  Browse Recipes
                 </button>
                 <button v-else class="btn btn-success btn-lg" @click="currentSection = 'auth'">
-                  Login to Get Started
+                  Join Our Community
                 </button>
               </div>
             </div>
             <div class="col-lg-6 text-center">
               <div class="hero-image">
-                <span class="display-1 text-success">🍎</span>
+                <span class="display-1 text-success">🍽️</span>
               </div>
             </div>
           </div>
@@ -108,10 +131,11 @@ const isAdmin = () => {
         <Auth @authenticated="handleAuthentication" />
       </section>
 
-      <!-- Form Section -->
-      <section v-if="currentSection === 'form'" class="py-5">
-        <Form />
+      <!-- Recipes Section -->
+      <section v-if="currentSection === 'recipes'" class="py-5">
+        <RecipeList />
       </section>
+
 
       <!-- Admin Panel Section -->
       <section v-if="currentSection === 'admin'" class="py-5">
@@ -121,9 +145,9 @@ const isAdmin = () => {
               <h2 class="text-center mb-4">Admin Panel</h2>
               <div class="alert alert-info">
                 <h5>Welcome, {{ currentUser.fullName }}!</h5>
-                <p>As an administrator, you have access to all participant data and can manage the system.</p>
+                <p>As an administrator, you have access to all recipe data and can manage the system.</p>
               </div>
-              <Form />
+              <RecipeList />
             </div>
           </div>
         </div>
@@ -135,7 +159,11 @@ const isAdmin = () => {
       <div class="container">
         <div class="row">
           <div class="col-12 text-center">
-            <p class="mb-0">Nutrition Education Hub</p>
+            <p class="mb-0">Healthy Recipe Hub - Share & Discover Delicious Healthy Recipes</p>
+            <!-- Debug button - remove in production -->
+            <button @click="clearUserData" class="btn btn-warning btn-sm mt-2">
+              Clear User Data (Debug)
+            </button>
           </div>
         </div>
       </div>
@@ -160,6 +188,27 @@ const isAdmin = () => {
   border-bottom: 2px solid white;
 }
 
+/* Button styles */
+.btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: white;
+}
+
+.btn-light:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+/* User dropdown styles */
+.dropdown-menu {
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .hero-section {
@@ -179,11 +228,25 @@ const isAdmin = () => {
   .btn {
     width: 100%;
   }
+
+  .navbar-nav {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .navbar-nav .nav-item {
+    margin-bottom: 0.5rem;
+  }
 }
 
 @media (max-width: 576px) {
   .display-4 {
     font-size: 2.5rem;
+  }
+
+  .btn-sm {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
   }
 }
 </style>

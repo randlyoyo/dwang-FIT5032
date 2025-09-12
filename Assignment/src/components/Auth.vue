@@ -200,26 +200,39 @@ const handleSubmit = () => {
   const hasErrors = Object.values(errors).some(error => error !== null)
 
   if (!hasErrors) {
-    // Simulate authentication
-    const user = {
-      email: formData.email,
-      fullName: formData.fullName || 'User',
-      role: formData.role || 'user',
-      id: Date.now()
-    }
+    if (isLogin.value) {
+      // Login logic
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const user = users.find(u => u.email === formData.email)
 
-    // Store user in localStorage
-    localStorage.setItem('currentUser', JSON.stringify(user))
+      if (user && user.password === formData.password) {
+        // Store current user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user))
+        emit('authenticated', user)
+        alert('Login successful!')
+      } else {
+        alert('Invalid email or password!')
+      }
+    } else {
+      // Registration logic
+      const user = {
+        email: formData.email,
+        password: formData.password,
+        fullName: formData.fullName || 'User',
+        role: formData.role || 'user',
+        id: Date.now()
+      }
 
-    // Store all users for login simulation
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    if (!isLogin.value) {
+      // Store all users for login simulation
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
       users.push(user)
       localStorage.setItem('users', JSON.stringify(users))
-    }
 
-    emit('authenticated', user)
-    alert(isLogin.value ? 'Login successful!' : 'Registration successful!')
+      // Store current user in localStorage
+      localStorage.setItem('currentUser', JSON.stringify(user))
+      emit('authenticated', user)
+      alert('Registration successful!')
+    }
   }
 }
 </script>

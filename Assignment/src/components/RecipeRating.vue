@@ -1,7 +1,7 @@
 <template>
-  <div class="rating-component">
+  <div class="recipe-rating-component">
     <div v-if="!hasRated" class="rating-input">
-      <h5>Rate this participant:</h5>
+      <h6 class="mb-3">Rate this recipe:</h6>
       <div class="star-rating">
         <span
           v-for="star in 5"
@@ -18,12 +18,12 @@
       <div class="mt-2">
         <textarea
           v-model="reviewText"
-          class="form-control"
-          placeholder="Write a review (optional)"
-          rows="3"
-          maxlength="500"
+          class="form-control form-control-sm"
+          placeholder="Write a review about this recipe (optional)"
+          rows="2"
+          maxlength="300"
         ></textarea>
-        <small class="text-muted">{{ reviewText.length }}/500 characters</small>
+        <small class="text-muted">{{ reviewText.length }}/300 characters</small>
       </div>
       <button @click="submitRating" class="btn btn-success btn-sm mt-2" :disabled="currentRating === 0">
         Submit Rating
@@ -45,9 +45,12 @@
         <span class="rating-text">{{ userRating }}/5</span>
       </div>
       <p v-if="userReview" class="review-text mt-2">{{ userReview }}</p>
+      <button @click="editRating" class="btn btn-outline-primary btn-sm mt-1">
+        Edit Rating
+      </button>
     </div>
 
-    <!-- Overall Rating Display -->
+    <!-- Overall Rating Display for this recipe -->
     <div v-if="overallRating > 0" class="overall-rating mt-3">
       <h6>Overall Rating: {{ overallRating.toFixed(1) }}/5</h6>
       <div class="star-rating-display">
@@ -69,8 +72,12 @@
 import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
-  participantId: {
+  recipeId: {
     type: Number,
+    required: true
+  },
+  recipeName: {
+    type: String,
     required: true
   }
 })
@@ -97,8 +104,8 @@ onMounted(() => {
 })
 
 const loadRatings = () => {
-  const ratings = JSON.parse(localStorage.getItem('participantRatings') || '{}')
-  allRatings.value = ratings[props.participantId] || []
+  const ratings = JSON.parse(localStorage.getItem('recipeRatings') || '{}')
+  allRatings.value = ratings[props.recipeId] || []
 }
 
 const checkUserRating = () => {
@@ -121,31 +128,33 @@ const submitRating = () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
 
   if (!currentUser.id) {
-    alert('Please login to rate participants')
+    alert('Please login to rate recipes')
     return
   }
 
   const ratingData = {
     userId: currentUser.id,
     userName: currentUser.fullName,
+    recipeId: props.recipeId,
+    recipeName: props.recipeName,
     rating: currentRating.value,
     review: reviewText.value.trim(),
     timestamp: new Date().toISOString()
   }
 
   // Update ratings in localStorage
-  const ratings = JSON.parse(localStorage.getItem('participantRatings') || '{}')
-  if (!ratings[props.participantId]) {
-    ratings[props.participantId] = []
+  const ratings = JSON.parse(localStorage.getItem('recipeRatings') || '{}')
+  if (!ratings[props.recipeId]) {
+    ratings[props.recipeId] = []
   }
 
   // Remove existing rating from this user
-  ratings[props.participantId] = ratings[props.participantId].filter(r => r.userId !== currentUser.id)
+  ratings[props.recipeId] = ratings[props.recipeId].filter(r => r.userId !== currentUser.id)
 
   // Add new rating
-  ratings[props.participantId].push(ratingData)
+  ratings[props.recipeId].push(ratingData)
 
-  localStorage.setItem('participantRatings', JSON.stringify(ratings))
+  localStorage.setItem('recipeRatings', JSON.stringify(ratings))
 
   // Update local state
   loadRatings()
@@ -155,10 +164,16 @@ const submitRating = () => {
 
   alert('Rating submitted successfully!')
 }
+
+const editRating = () => {
+  hasRated.value = false
+  currentRating.value = userRating.value
+  reviewText.value = userReview.value
+}
 </script>
 
 <style scoped>
-.rating-component {
+.recipe-rating-component {
   padding: 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -172,7 +187,7 @@ const submitRating = () => {
 }
 
 .star {
-  font-size: 24px;
+  font-size: 20px;
   color: #ddd;
   cursor: pointer;
   transition: color 0.2s;
@@ -189,7 +204,7 @@ const submitRating = () => {
 }
 
 .star-display {
-  font-size: 18px;
+  font-size: 16px;
   color: #ddd;
 }
 
@@ -206,9 +221,10 @@ const submitRating = () => {
   font-style: italic;
   color: #666;
   background-color: white;
-  padding: 10px;
+  padding: 8px;
   border-radius: 5px;
   border-left: 3px solid #198754;
+  font-size: 0.9rem;
 }
 
 .overall-rating {
