@@ -1,44 +1,37 @@
 <script setup>
-import RecipeList from './components/RecipeList.vue'
-import Auth from './components/Auth.vue'
-import { ref, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { authMiddleware } from './middleware/auth.js'
 
-const currentSection = ref('home')
-const currentUser = ref(null)
-const isAuthenticated = ref(false)
+const router = useRouter()
+
+const currentUser = computed(() => authMiddleware.getCurrentUser())
+const isAuthenticated = computed(() => authMiddleware.isAuthenticated())
+const isAdmin = computed(() => authMiddleware.isAdmin())
 
 onMounted(() => {
-  // Check if user is already logged in
-  const savedUser = localStorage.getItem('currentUser')
-  if (savedUser) {
-    currentUser.value = JSON.parse(savedUser)
-    isAuthenticated.value = true
+  // 基本认证检查
+  if (isAuthenticated.value) {
+    console.log('User is authenticated')
   }
 })
 
-const handleAuthentication = (user) => {
-  currentUser.value = user
-  isAuthenticated.value = true
-  currentSection.value = 'home'
-}
+// 这个函数现在由Auth组件直接处理
+// const handleAuthentication = (user) => {
+//   if (authMiddleware.login(user)) {
+//     router.push({ name: 'Home' })
+//   }
+// }
 
 const logout = () => {
-  currentUser.value = null
-  isAuthenticated.value = false
-  localStorage.removeItem('currentUser')
-  currentSection.value = 'home'
-}
-
-const isAdmin = () => {
-  return currentUser.value && currentUser.value.role === 'admin'
+  authMiddleware.logout()
+  router.push({ name: 'Home' })
 }
 
 // Debug function to clear user data
 const clearUserData = () => {
-  localStorage.removeItem('currentUser')
+  authMiddleware.logout()
   localStorage.removeItem('users')
-  currentUser.value = null
-  isAuthenticated.value = false
   alert('User data cleared! Please refresh the page.')
 }
 </script>
@@ -53,14 +46,12 @@ const clearUserData = () => {
         </a>
 
         <div class="navbar-nav ms-auto">
-          <a class="nav-link" :class="{ 'active': currentSection === 'home' }"
-             href="#" @click="currentSection = 'home'">Home</a>
+          <router-link class="nav-link" to="/">Home</router-link>
 
           <template v-if="isAuthenticated">
-            <a class="nav-link" :class="{ 'active': currentSection === 'recipes' }"
-               href="#" @click="currentSection = 'recipes'">Browse Recipes</a>
-            <a v-if="isAdmin()" class="nav-link" :class="{ 'active': currentSection === 'admin' }"
-               href="#" @click="currentSection = 'admin'">Admin Panel</a>
+            <router-link class="nav-link" to="/recipes">Browse Recipes</router-link>
+            <router-link v-if="isAdmin" class="nav-link" to="/admin">Admin Panel</router-link>
+            <router-link class="nav-link" to="/profile">Profile</router-link>
 
             <!-- User info and logout button -->
             <div class="nav-item dropdown me-2">
@@ -82,12 +73,12 @@ const clearUserData = () => {
 
           <template v-else>
             <!-- Prominent Login Button -->
-            <button class="btn btn-outline-light btn-sm me-2" @click="currentSection = 'auth'">
+            <router-link class="btn btn-outline-light btn-sm me-2" to="/auth">
               <i class="bi bi-box-arrow-in-right"></i> Login
-            </button>
-            <button class="btn btn-light btn-sm" @click="currentSection = 'auth'">
+            </router-link>
+            <router-link class="btn btn-light btn-sm" to="/auth">
               <i class="bi bi-person-plus"></i> Register
-            </button>
+            </router-link>
           </template>
         </div>
       </div>
@@ -95,63 +86,7 @@ const clearUserData = () => {
 
     <!-- Main Content -->
     <main>
-      <!-- Home Section -->
-      <section v-if="currentSection === 'home'" class="hero-section">
-        <div class="container">
-          <div class="row align-items-center min-vh-100">
-            <div class="col-lg-6">
-              <h1 class="display-4 fw-bold text-success mb-4">
-                Share & Discover Healthy Recipes
-              </h1>
-              <p class="lead mb-4">
-                Join our community of health-conscious food lovers! Share your favorite healthy recipes,
-                discover new nutritious meals, and get inspired by others' culinary creations.
-                Together, we can make healthy eating delicious and accessible for everyone.
-              </p>
-              <div class="d-flex gap-3">
-                <button v-if="isAuthenticated" class="btn btn-success btn-lg" @click="currentSection = 'recipes'">
-                  Browse Recipes
-                </button>
-                <button v-else class="btn btn-success btn-lg" @click="currentSection = 'auth'">
-                  Join Our Community
-                </button>
-              </div>
-            </div>
-            <div class="col-lg-6 text-center">
-              <div class="hero-image">
-                <span class="display-1 text-success">🍽️</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Authentication Section -->
-      <section v-if="currentSection === 'auth'" class="py-5">
-        <Auth @authenticated="handleAuthentication" />
-      </section>
-
-      <!-- Recipes Section -->
-      <section v-if="currentSection === 'recipes'" class="py-5">
-        <RecipeList />
-      </section>
-
-
-      <!-- Admin Panel Section -->
-      <section v-if="currentSection === 'admin'" class="py-5">
-        <div class="container">
-          <div class="row">
-            <div class="col-12">
-              <h2 class="text-center mb-4">Admin Panel</h2>
-              <div class="alert alert-info">
-                <h5>Welcome, {{ currentUser.fullName }}!</h5>
-                <p>As an administrator, you have access to all recipe data and can manage the system.</p>
-              </div>
-              <RecipeList />
-            </div>
-          </div>
-        </div>
-      </section>
+      <router-view />
     </main>
 
     <!-- Footer -->

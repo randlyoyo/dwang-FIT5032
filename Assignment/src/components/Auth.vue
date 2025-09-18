@@ -98,7 +98,10 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { authMiddleware } from '../middleware/auth.js'
 
+const router = useRouter()
 const emit = defineEmits(['authenticated'])
 
 const isLogin = ref(true)
@@ -156,8 +159,16 @@ const validateEmail = () => {
 const validatePassword = () => {
   if (!formData.password) {
     errors.password = 'Password is required'
-  } else if (formData.password.length < 6) {
-    errors.password = 'Password must be at least 6 characters long'
+  } else if (formData.password.length < 8) {
+    errors.password = 'Password must be at least 8 characters long'
+  } else if (!/(?=.*[a-z])/.test(formData.password)) {
+    errors.password = 'Password must contain at least one lowercase letter'
+  } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+    errors.password = 'Password must contain at least one uppercase letter'
+  } else if (!/(?=.*\d)/.test(formData.password)) {
+    errors.password = 'Password must contain at least one number'
+  } else if (!/(?=.*[@$!%*?&])/.test(formData.password)) {
+    errors.password = 'Password must contain at least one special character (@$!%*?&)'
   } else {
     errors.password = null
   }
@@ -181,6 +192,8 @@ const validateFullName = () => {
       errors.fullName = 'Full name is required'
     } else if (formData.fullName.length < 2) {
       errors.fullName = 'Full name must be at least 2 characters long'
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.fullName)) {
+      errors.fullName = 'Full name can only contain letters, spaces, hyphens, and apostrophes'
     } else {
       errors.fullName = null
     }
@@ -201,37 +214,76 @@ const handleSubmit = () => {
 
   if (!hasErrors) {
     if (isLogin.value) {
-      // Login logic
+      // 安全登录逻辑
       const users = JSON.parse(localStorage.getItem('users') || '[]')
       const user = users.find(u => u.email === formData.email)
 
       if (user && user.password === formData.password) {
-        // Store current user in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(user))
-        emit('authenticated', user)
-        alert('Login successful!')
+        // 使用安全认证中间件
+        const userData = {
+          username: user.email,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role
+        }
+
+        if (authMiddleware.login(userData)) {
+          emit('authenticated', userData)
+          alert('Login successful!')
+        } else {
+          alert('Login failed due to security validation!')
+        }
       } else {
+        // 记录失败的登录尝试
+        authMiddleware.logSecurityEvent('login_failed', {
+          email: formData.email,
+          timestamp: new Date().toISOString(),
+          reason: 'invalid_credentials'
+        })
         alert('Invalid email or password!')
       }
     } else {
-      // Registration logic
-      const user = {
+      // 安全注册逻辑
+      const userData = {
+        username: formData.email,
         email: formData.email,
+        fullName: formData.fullName,
+        role: formData.role || 'user'
+      }
+
+      // 验证用户数据
+      if (!authMiddleware.validateUserData(userData)) {
+        alert('Invalid user data provided!')
+        return
+      }
+
+      // 检查用户是否已存在
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const existingUser = users.find(u => u.email === formData.email)
+
+      if (existingUser) {
+        alert('User with this email already exists!')
+        return
+      }
+
+      // 创建新用户
+      const user = {
+        ...userData,
         password: formData.password,
-        fullName: formData.fullName || 'User',
-        role: formData.role || 'user',
         id: Date.now()
       }
 
-      // Store all users for login simulation
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      // 存储用户数据
       users.push(user)
       localStorage.setItem('users', JSON.stringify(users))
 
-      // Store current user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user))
-      emit('authenticated', user)
-      alert('Registration successful!')
+      // 使用安全认证中间件登录
+      if (authMiddleware.login(userData)) {
+        emit('authenticated', userData)
+        alert('Registration successful!')
+      } else {
+        alert('Registration failed due to security validation!')
+      }
     }
   }
 }
