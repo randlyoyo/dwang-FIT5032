@@ -13,6 +13,7 @@ import { useRouter } from "vue-router"
 const email = ref("")
 const password = ref("")
 const router = useRouter()
+const auth = getAuth()
 const register = () => {
     createUserWithEmailAndPassword(auth, email.value, password.value)
     .then((data) => {

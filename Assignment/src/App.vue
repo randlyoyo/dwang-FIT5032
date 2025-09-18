@@ -41,9 +41,9 @@ const clearUserData = () => {
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
       <div class="container">
-        <a class="navbar-brand fw-bold" href="#" @click="currentSection = 'home'">
+        <router-link class="navbar-brand fw-bold" to="/">
           🍽️ Healthy Recipe Hub
-        </a>
+        </router-link>
 
         <div class="navbar-nav ms-auto">
           <router-link class="nav-link" to="/">Home</router-link>

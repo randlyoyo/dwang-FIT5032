@@ -16,7 +16,7 @@ const router = useRouter()
 const auth = getAuth()
 
 const signin = () => {
-  signInWithEmailAndPassword(getAuth(), email.value, password.value)
+  signInWithEmailAndPassword(auth, email.value, password.value)
     .then((data) => {
       console.log("Firebase Register Successful!")
       router.push("/")

@@ -96,7 +96,7 @@ const validateConfirmPassword = (blur) => {
           <div class="row mb-3">
             <div class="col-md-6 col-sm-6">
               <label for="username" class="form-label">Username</label>
-              d<input
+              <input
                 type="text"
                 class="form-control"
                 id="username"
