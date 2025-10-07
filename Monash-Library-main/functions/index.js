@@ -21,7 +21,7 @@ exports.countBooks = onRequest((req, res) => {
       const snapshot = await booksCollection.get();
       const count = snapshot.size;
 
-      res.status(200).send({ count });
+      res.status(200).send({count});
     } catch (error) {
       console.error("Error counting books:", error.message);
       res.status(500).send("Error counting books");
@@ -38,7 +38,7 @@ exports.countBooks = onRequest((req, res) => {
 // functions should each use functions.runWith({ maxInstances: 10 }) instead.
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({maxInstances: 10});
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
