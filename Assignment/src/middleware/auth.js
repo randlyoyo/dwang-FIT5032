@@ -1,13 +1,37 @@
-// 认证中间件 - 提供安全认证功能
+// 认证中间件 - 提供安全认证功能，支持Firebase Auth
+import firebaseAuthService from '../services/firebaseAuth.js'
+
 export const authMiddleware = {
-  // 检查用户是否已认证
+  // 检查用户是否已认证（支持Firebase）
   isAuthenticated() {
+    // 首先检查Firebase认证状态
+    if (firebaseAuthService.isAuthenticated()) {
+      return true
+    }
+
+    // 回退到本地存储检查
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
     return !!currentUser
   },
 
-  // 获取当前用户信息
+  // 获取当前用户信息（支持Firebase）
   getCurrentUser() {
+    // 首先尝试从Firebase获取用户信息
+    if (firebaseAuthService.isAuthenticated()) {
+      const firebaseUser = firebaseAuthService.getUserData()
+      if (firebaseUser) {
+        return {
+          username: firebaseUser.email,
+          email: firebaseUser.email,
+          fullName: firebaseUser.displayName,
+          role: firebaseUser.role,
+          uid: firebaseUser.uid,
+          emailVerified: firebaseUser.emailVerified,
+        }
+      }
+    }
+
+    // 回退到本地存储
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
     return currentUser
   },
@@ -19,9 +43,9 @@ export const authMiddleware = {
 
     // 角色层级检查
     const roleHierarchy = {
-      'guest': 0,
-      'user': 1,
-      'admin': 2
+      guest: 0,
+      user: 1,
+      admin: 2,
     }
 
     const userLevel = roleHierarchy[currentUser.role] || 0
@@ -55,7 +79,7 @@ export const authMiddleware = {
       this.logSecurityEvent('user_login', {
         username: userData.username,
         role: userData.role,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
 
       return true
@@ -63,25 +87,34 @@ export const authMiddleware = {
       console.error('Login error:', error)
       this.logSecurityEvent('login_failed', {
         error: error.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
       return false
     }
   },
 
-  // 安全登出
-  logout() {
+  // 安全登出（支持Firebase）
+  async logout() {
     const currentUser = this.getCurrentUser()
     if (currentUser) {
       // 记录登出日志
       this.logSecurityEvent('user_logout', {
         username: currentUser.username,
         role: currentUser.role,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
     }
 
-    // 清除用户数据
+    // Firebase登出
+    if (firebaseAuthService.isAuthenticated()) {
+      try {
+        await firebaseAuthService.signOut()
+      } catch (error) {
+        console.error('Firebase logout error:', error)
+      }
+    }
+
+    // 清除本地用户数据
     localStorage.removeItem('currentUser')
 
     // 清除其他相关数据
@@ -134,7 +167,7 @@ export const authMiddleware = {
       data,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      url: window.location.href
+      url: window.location.href,
     }
 
     console.log('Security Event:', securityLog)
@@ -157,7 +190,22 @@ export const authMiddleware = {
       return true
     }
     return false
-  }
+  },
+
+  // Firebase相关辅助方法
+  // 发送密码重置邮件
+  async sendPasswordReset(email) {
+    try {
+      const result = await firebaseAuthService.sendPasswordReset(email)
+      return result
+    } catch (error) {
+      console.error('Password reset error:', error)
+      return {
+        success: false,
+        error: 'Failed to send password reset email',
+      }
+    }
+  },
 }
 
 // 权限检查装饰器

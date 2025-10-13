@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ref } from 'vue'
 
 // 导入组件
 import Home from '../components/Home.vue'
@@ -7,7 +6,13 @@ import Auth from '../components/Auth.vue'
 import RecipeList from '../components/RecipeList.vue'
 import AdminPanel from '../components/AdminPanel.vue'
 import Profile from '../components/Profile.vue'
-// import NotFound from '../components/NotFound.vue'
+import EmailTest from '../components/EmailTest.vue'
+import UserManagement from '../components/UserManagement.vue'
+import CloudFunctionsDemo from '../components/CloudFunctionsDemo.vue'
+import HealthyStoreMap from '../components/HealthyStoreMap.vue'
+import MapboxStoreLocator from '../components/MapboxStoreLocator.vue'
+import AccessibilityDemo from '../components/AccessibilityDemo.vue'
+import GeminiAI from '../components/GeminiAI.vue'
 
 // 创建路由实例
 const router = createRouter({
@@ -20,8 +25,8 @@ const router = createRouter({
       meta: {
         title: 'Home',
         requiresAuth: false,
-        allowedRoles: ['guest', 'user', 'admin']
-      }
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
     },
     {
       path: '/auth',
@@ -31,8 +36,8 @@ const router = createRouter({
         title: 'Authentication',
         requiresAuth: false,
         allowedRoles: ['guest'],
-        redirectIfAuthenticated: true
-      }
+        redirectIfAuthenticated: true,
+      },
     },
     {
       path: '/recipes',
@@ -41,8 +46,8 @@ const router = createRouter({
       meta: {
         title: 'Browse Recipes',
         requiresAuth: true,
-        allowedRoles: ['user', 'admin']
-      }
+        allowedRoles: ['user', 'admin'],
+      },
     },
     {
       path: '/admin',
@@ -52,8 +57,8 @@ const router = createRouter({
         title: 'Admin Panel',
         requiresAuth: true,
         allowedRoles: ['admin'],
-        requiresAdmin: true
-      }
+        requiresAdmin: true,
+      },
     },
     {
       path: '/profile',
@@ -62,21 +67,80 @@ const router = createRouter({
       meta: {
         title: 'User Profile',
         requiresAuth: true,
-        allowedRoles: ['user', 'admin']
-      }
+        allowedRoles: ['user', 'admin'],
+      },
     },
-    // 404页面已移除
-    // {
-    //   path: '/:pathMatch(.*)*',
-    //   name: 'NotFound',
-    //   component: NotFound,
-    //   meta: {
-    //     title: 'Page Not Found',
-    //     requiresAuth: false,
-    //     allowedRoles: ['guest', 'user', 'admin']
-    //   }
-    // }
-  ]
+    {
+      path: '/email-test',
+      name: 'EmailTest',
+      component: EmailTest,
+      meta: {
+        title: 'Email Center',
+        requiresAuth: true,
+        allowedRoles: ['user', 'admin'],
+      },
+    },
+    {
+      path: '/users',
+      name: 'UserManagement',
+      component: UserManagement,
+      meta: {
+        title: 'User Management',
+        requiresAuth: true,
+        allowedRoles: ['admin'],
+      },
+    },
+    {
+      path: '/cloud-functions',
+      name: 'CloudFunctions',
+      component: CloudFunctionsDemo,
+      meta: {
+        title: 'Cloud Functions Demo',
+        requiresAuth: false,
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+    {
+      path: '/store-locator',
+      name: 'StoreLocator',
+      component: MapboxStoreLocator,
+      meta: {
+        title: 'Healthy Food Store Locator (Mapbox)',
+        requiresAuth: false,
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+    {
+      path: '/store-locator-google',
+      name: 'StoreLocatorGoogle',
+      component: HealthyStoreMap,
+      meta: {
+        title: 'Healthy Food Store Locator (Google Maps)',
+        requiresAuth: false,
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+    {
+      path: '/accessibility',
+      name: 'Accessibility',
+      component: AccessibilityDemo,
+      meta: {
+        title: 'Accessibility Features',
+        requiresAuth: false,
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+    {
+      path: '/ai-assistant',
+      name: 'AIAssistant',
+      component: GeminiAI,
+      meta: {
+        title: 'AI Recipe Assistant',
+        requiresAuth: false,
+        allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+  ],
 })
 
 // 全局前置守卫 - 安全验证
@@ -98,7 +162,9 @@ router.beforeEach((to, from, next) => {
 
   // 安全检查2: 检查用户角色权限
   if (to.meta.allowedRoles && !to.meta.allowedRoles.includes(userRole)) {
-    console.warn(`Security: Unauthorized role access attempt. User: ${userRole}, Required: ${to.meta.allowedRoles}`)
+    console.warn(
+      `Security: Unauthorized role access attempt. User: ${userRole}, Required: ${to.meta.allowedRoles}`,
+    )
     next({ name: 'Home' })
     return
   }
@@ -133,7 +199,7 @@ router.beforeEach((to, from, next) => {
       action: 'unauthorized_access_attempt',
       path: to.path,
       userAgent: navigator.userAgent,
-      ip: 'client-side'
+      ip: 'client-side',
     }
     console.warn('Suspicious activity detected:', suspiciousActivity)
   }
@@ -154,7 +220,7 @@ router.afterEach((to, from) => {
     to: to.path,
     user: currentUser?.username || 'anonymous',
     role: userRole,
-    userAgent: navigator.userAgent
+    userAgent: navigator.userAgent,
   }
 
   console.log('Route access log:', accessLog)

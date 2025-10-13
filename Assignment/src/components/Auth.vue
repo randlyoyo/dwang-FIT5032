@@ -1,94 +1,131 @@
 <template>
-  <div class="container mt-5">
-    <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header bg-success text-white text-center">
-            <h4>{{ isLogin ? 'Login' : 'Register' }}</h4>
-          </div>
-          <div class="card-body">
-            <form @submit.prevent="handleSubmit">
-              <div class="mb-3">
-                <label for="email" class="form-label">Email Address</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.email }"
-                  id="email"
-                  v-model="formData.email"
-                  @blur="validateEmail"
-                  @input="clearError('email')"
-                  required>
-                <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
-              </div>
+  <div>
+    <PageHeader
+      :title="isLogin ? 'Welcome Back' : 'Join Our Community'"
+      :description="
+        isLogin
+          ? 'Sign in to access your healthy recipes'
+          : 'Create an account to start sharing recipes'
+      "
+    />
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <form @submit.prevent="handleSubmit">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email Address</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.email }"
+                    id="email"
+                    v-model="formData.email"
+                    @blur="validateEmail"
+                    @input="clearError('email')"
+                    required
+                  />
+                  <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
+                </div>
 
-              <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input
-                  type="password"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.password }"
-                  id="password"
-                  v-model="formData.password"
-                  @blur="validatePassword"
-                  @input="clearError('password')"
-                  required>
-                <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
-              </div>
+                <div class="mb-3">
+                  <label for="password" class="form-label">Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.password }"
+                    id="password"
+                    v-model="formData.password"
+                    @blur="validatePassword"
+                    @input="clearError('password')"
+                    required
+                  />
+                  <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
+                </div>
 
-              <div v-if="!isLogin" class="mb-3">
-                <label for="confirmPassword" class="form-label">Confirm Password</label>
-                <input
-                  type="password"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.confirmPassword }"
-                  id="confirmPassword"
-                  v-model="formData.confirmPassword"
-                  @blur="validateConfirmPassword"
-                  @input="clearError('confirmPassword')"
-                  required>
-                <div v-if="errors.confirmPassword" class="invalid-feedback">{{ errors.confirmPassword }}</div>
-              </div>
+                <div v-if="!isLogin" class="mb-3">
+                  <label for="confirmPassword" class="form-label">Confirm Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.confirmPassword }"
+                    id="confirmPassword"
+                    v-model="formData.confirmPassword"
+                    @blur="validateConfirmPassword"
+                    @input="clearError('confirmPassword')"
+                    required
+                  />
+                  <div v-if="errors.confirmPassword" class="invalid-feedback">
+                    {{ errors.confirmPassword }}
+                  </div>
+                </div>
 
-              <div v-if="!isLogin" class="mb-3">
-                <label for="fullName" class="form-label">Full Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.fullName }"
-                  id="fullName"
-                  v-model="formData.fullName"
-                  @blur="validateFullName"
-                  @input="clearError('fullName')"
-                  required>
-                <div v-if="errors.fullName" class="invalid-feedback">{{ errors.fullName }}</div>
-              </div>
+                <div v-if="!isLogin" class="mb-3">
+                  <label for="fullName" class="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.fullName }"
+                    id="fullName"
+                    v-model="formData.fullName"
+                    @blur="validateFullName"
+                    @input="clearError('fullName')"
+                    required
+                  />
+                  <div v-if="errors.fullName" class="invalid-feedback">{{ errors.fullName }}</div>
+                </div>
 
-              <div v-if="!isLogin" class="mb-3">
-                <label for="role" class="form-label">Account Type</label>
-                <select
-                  class="form-select"
-                  :class="{ 'is-invalid': errors.role }"
-                  id="role"
-                  v-model="formData.role"
-                  @change="clearError('role')"
-                  required>
-                  <option value="">Select Account Type</option>
-                  <option value="user">Regular User</option>
-                  <option value="admin">Administrator</option>
-                </select>
-                <div v-if="errors.role" class="invalid-feedback">{{ errors.role }}</div>
-              </div>
+                <div v-if="!isLogin" class="mb-3">
+                  <label for="role" class="form-label">Account Type</label>
+                  <select
+                    class="form-select"
+                    :class="{ 'is-invalid': errors.role }"
+                    id="role"
+                    v-model="formData.role"
+                    @change="clearError('role')"
+                    required
+                  >
+                    <option value="">Select Account Type</option>
+                    <option value="user">Regular User</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                  <div v-if="errors.role" class="invalid-feedback">{{ errors.role }}</div>
+                </div>
 
-              <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-success">
-                  {{ isLogin ? 'Login' : 'Register' }}
-                </button>
-                <button type="button" class="btn btn-outline-secondary" @click="toggleMode">
-                  {{ isLogin ? 'Need an account? Register' : 'Already have an account? Login' }}
-                </button>
-              </div>
-            </form>
+                <!-- 认证消息显示 -->
+                <div
+                  v-if="authMessage"
+                  class="alert"
+                  :class="
+                    authMessage.includes('successful') || authMessage.includes('success')
+                      ? 'alert-success'
+                      : 'alert-danger'
+                  "
+                >
+                  {{ authMessage }}
+                </div>
+
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-success" :disabled="isLoading">
+                    <span
+                      v-if="isLoading"
+                      class="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
+                    {{ isLoading ? 'Processing...' : isLogin ? 'Login' : 'Register' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="toggleMode"
+                    :disabled="isLoading"
+                  >
+                    {{ isLogin ? 'Need an account? Register' : 'Already have an account? Login' }}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -97,20 +134,24 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import PageHeader from './PageHeader.vue'
+import { ref, reactive, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authMiddleware } from '../middleware/auth.js'
+import firebaseAuthService from '../services/firebaseAuth.js'
 
 const router = useRouter()
+const route = useRoute()
 const emit = defineEmits(['authenticated'])
 
 const isLogin = ref(true)
+
 const formData = reactive({
   email: '',
   password: '',
   confirmPassword: '',
   fullName: '',
-  role: ''
+  role: '',
 })
 
 const errors = reactive({
@@ -118,14 +159,31 @@ const errors = reactive({
   password: null,
   confirmPassword: null,
   fullName: null,
-  role: null
+  role: null,
 })
 
+const isLoading = ref(false)
+const authMessage = ref('')
+
 const toggleMode = () => {
-  isLogin.value = !isLogin.value
-  clearAllErrors()
-  resetForm()
+  // Just update URL, let the watcher handle the rest
+  const newMode = isLogin.value ? 'register' : 'login'
+  router.push({ name: 'Auth', query: { mode: newMode } })
 }
+
+// Watch for route query changes
+watch(
+  () => route.query.mode,
+  (newMode) => {
+    if (newMode === 'register') {
+      isLogin.value = false
+    } else {
+      isLogin.value = true
+    }
+    clearAllErrors()
+    resetForm()
+  },
+)
 
 const resetForm = () => {
   formData.email = ''
@@ -136,7 +194,7 @@ const resetForm = () => {
 }
 
 const clearAllErrors = () => {
-  Object.keys(errors).forEach(key => {
+  Object.keys(errors).forEach((key) => {
     errors[key] = null
   })
 }
@@ -200,7 +258,7 @@ const validateFullName = () => {
   }
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // Validate all fields
   validateEmail()
   validatePassword()
@@ -210,83 +268,110 @@ const handleSubmit = () => {
   }
 
   // Check if there are any errors
-  const hasErrors = Object.values(errors).some(error => error !== null)
+  const hasErrors = Object.values(errors).some((error) => error !== null)
 
   if (!hasErrors) {
-    if (isLogin.value) {
-      // 安全登录逻辑
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
-      const user = users.find(u => u.email === formData.email)
+    isLoading.value = true
+    authMessage.value = ''
 
-      if (user && user.password === formData.password) {
-        // 使用安全认证中间件
-        const userData = {
-          username: user.email,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role
-        }
+    try {
+      if (isLogin.value) {
+        // Firebase登录
+        const result = await firebaseAuthService.signIn(formData.email, formData.password)
 
-        if (authMiddleware.login(userData)) {
-          emit('authenticated', userData)
-          alert('Login successful!')
+        if (result.success) {
+          // 使用安全认证中间件存储用户信息
+          const userData = {
+            username: result.user.email,
+            email: result.user.email,
+            fullName: result.user.displayName,
+            role: result.user.role,
+            uid: result.user.uid,
+            emailVerified: result.user.emailVerified,
+          }
+
+          if (authMiddleware.login(userData)) {
+            emit('authenticated', userData)
+            authMessage.value = 'Login successful!'
+            // 登录成功后跳转到首页
+            setTimeout(() => {
+              router.push({ name: 'Home' })
+            }, 1000)
+          } else {
+            authMessage.value = 'Login failed due to security validation!'
+          }
         } else {
-          alert('Login failed due to security validation!')
+          authMessage.value = result.error
         }
       } else {
-        // 记录失败的登录尝试
-        authMiddleware.logSecurityEvent('login_failed', {
-          email: formData.email,
-          timestamp: new Date().toISOString(),
-          reason: 'invalid_credentials'
-        })
-        alert('Invalid email or password!')
-      }
-    } else {
-      // 安全注册逻辑
-      const userData = {
-        username: formData.email,
-        email: formData.email,
-        fullName: formData.fullName,
-        role: formData.role || 'user'
-      }
+        // Firebase注册
+        const result = await firebaseAuthService.signUp(
+          formData.email,
+          formData.password,
+          formData.fullName,
+          formData.role || 'user',
+        )
 
-      // 验证用户数据
-      if (!authMiddleware.validateUserData(userData)) {
-        alert('Invalid user data provided!')
-        return
+        if (result.success) {
+          authMessage.value = result.message
+          // 注册成功后切换到登录模式
+          setTimeout(() => {
+            isLogin.value = true
+            resetForm()
+            clearAllErrors()
+          }, 2000)
+        } else {
+          authMessage.value = result.error
+        }
       }
-
-      // 检查用户是否已存在
-      const users = JSON.parse(localStorage.getItem('users') || '[]')
-      const existingUser = users.find(u => u.email === formData.email)
-
-      if (existingUser) {
-        alert('User with this email already exists!')
-        return
-      }
-
-      // 创建新用户
-      const user = {
-        ...userData,
-        password: formData.password,
-        id: Date.now()
-      }
-
-      // 存储用户数据
-      users.push(user)
-      localStorage.setItem('users', JSON.stringify(users))
-
-      // 使用安全认证中间件登录
-      if (authMiddleware.login(userData)) {
-        emit('authenticated', userData)
-        alert('Registration successful!')
-      } else {
-        alert('Registration failed due to security validation!')
-      }
+    } catch (error) {
+      console.error('Authentication error:', error)
+      authMessage.value = 'An unexpected error occurred. Please try again.'
+    } finally {
+      isLoading.value = false
     }
   }
 }
+
+// 组件挂载时监听认证状态
+onMounted(() => {
+  // Check URL query parameter to set initial mode
+  const mode = route.query.mode
+  if (mode === 'register') {
+    isLogin.value = false
+  } else {
+    isLogin.value = true
+  }
+
+  // Listen for Firebase auth state changes
+  firebaseAuthService.onAuthStateChange((user) => {
+    if (user) {
+      // 用户已登录，获取用户数据
+      const userData = firebaseAuthService.getUserData()
+      if (userData) {
+        const authUserData = {
+          username: userData.email,
+          email: userData.email,
+          fullName: userData.displayName,
+          role: userData.role,
+          uid: userData.uid,
+          emailVerified: userData.emailVerified,
+        }
+
+        // 使用安全认证中间件存储用户信息
+        if (authMiddleware.login(authUserData)) {
+          emit('authenticated', authUserData)
+        }
+      }
+    }
+  })
+})
+
+// 组件卸载时清理监听器
+onUnmounted(() => {
+  // 清理认证状态监听器
+  firebaseAuthService.removeAuthStateListener(() => {})
+})
 </script>
 
 <style scoped>

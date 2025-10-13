@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EmailJS 配置状态检查</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 800px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 2em;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+      }
+
+      .status-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+      }
+
+      .status-card.success {
+        border-color: #28a745;
+        background: #f0fff4;
+      }
+
+      .status-card.error {
+        border-color: #dc3545;
+        background: #fff5f5;
+      }
+
+      .status-card.warning {
+        border-color: #ffc107;
+        background: #fffbf0;
+      }
+
+      .status-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+      }
+
+      .status-icon {
+        font-size: 2em;
+      }
+
+      .status-title {
+        font-size: 1.3em;
+        font-weight: bold;
+      }
+
+      .status-body {
+        margin-left: 50px;
+      }
+
+      .config-value {
+        background: #f8f9fa;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+      }
+
+      .action-button {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        margin-top: 15px;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 1em;
+      }
+
+      .action-button:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+      }
+
+      .steps {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+      }
+
+      .step {
+        padding: 15px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .step:last-child {
+        border-bottom: none;
+      }
+
+      .step-number {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 30px;
+        margin-right: 10px;
+        font-weight: bold;
+      }
+
+      .error-message {
+        background: #dc3545;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+      }
+
+      .summary {
+        text-align: center;
+        padding: 20px;
+        font-size: 1.2em;
+        margin-top: 20px;
+      }
+
+      .summary.good {
+        color: #28a745;
+      }
+
+      .summary.bad {
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📧 EmailJS 配置状态检查</h1>
+      <p class="subtitle">检查你的 EmailJS 配置是否完整</p>
+
+      <div id="status-container">
+        <!-- 状态卡片将由 JavaScript 动态生成 -->
+      </div>
+
+      <div id="summary" class="summary"></div>
+
+      <div id="next-steps"></div>
+    </div>
+
+    <script>
+            // 读取环境变量（从 Vite）
+            const config = {
+              publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+              serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+              templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+            }
+
+            console.log('📧 EmailJS Config:', config)
+
+            function checkConfig() {
+              const container = document.getElementById('status-container')
+              const summaryDiv = document.getElementById('summary')
+              const nextStepsDiv = document.getElementById('next-steps')
+
+              let allGood = true
+              let html = ''
+
+              // 检查 Public Key
+              if (config.publicKey && config.publicKey !== 'your-public-key') {
+                html += createStatusCard(
+                  'success',
+                  '✅',
+                  'Public Key 配置正确',
+                  `<div class="config-value">${config.publicKey}</div><p>✨ 太好了！Public Key 已配置</p>`,
+                )
+              } else {
+                allGood = false
+                html += createStatusCard(
+                  'error',
+                  '❌',
+                  'Public Key 未配置',
+                  `<div class="config-value">${config.publicKey || '未设置'}</div>
+                  <div class="error-message">你的 Public Key 是: <strong>Imm-9hpIk6q8f6EDX</strong></div>
+                  <p>请在 .env.local 文件中添加此配置</p>`,
+                )
+              }
+
+              // 检查 Service ID
+              if (config.serviceId && config.serviceId !== 'your-service-id') {
+                html += createStatusCard(
+                  'success',
+                  '✅',
+                  'Service ID 配置正确',
+                  `<div class="config-value">${config.serviceId}</div><p>✨ Gmail 服务已连接</p>`,
+                )
+              } else {
+                allGood = false
+                html += createStatusCard(
+                  'error',
+                  '❌',
+                  'Service ID 未配置',
+                  `<div class="config-value">${config.serviceId || '未设置'}</div>
+                  <div class="error-message">这是导致 "insufficient authentication scopes" 错误的主要原因！</div>
+                  <p>你需要在 EmailJS 网站上添加 Gmail 服务并获取 Service ID</p>
+                  <a href="https://dashboard.emailjs.com/admin" target="_blank" class="action-button">
+                    🔗 前往 EmailJS Dashboard
+                  </a>`,
+                )
+              }
+
+              // 检查 Template ID
+              if (config.templateId && config.templateId !== 'your-template-id') {
+                html += createStatusCard(
+                  'success',
+                  '✅',
+                  'Template ID 配置正确',
+                  `<div class="config-value">${config.templateId}</div><p>✨ 邮件模板已设置</p>`,
+                )
+              } else {
+                allGood = false
+                html += createStatusCard(
+                  'error',
+                  '❌',
+                  'Template ID 未配置',
+                  `<div class="config-value">${config.templateId || '未设置'}</div>
+                  <p>你需要在 EmailJS 网站上创建邮件模板并获取 Template ID</p>`,
+                )
+              }
+
+              container.innerHTML = html
+
+              // 显示总结
+              if (allGood) {
+                summaryDiv.className = 'summary good'
+                summaryDiv.innerHTML = '🎉 恭喜！所有配置都正确，邮件功能应该可以正常工作了！'
+              } else {
+                summaryDiv.className = 'summary bad'
+                summaryDiv.innerHTML = '⚠️ 有配置项未完成，请按照下面的步骤完成配置'
+
+                // 显示后续步骤
+                nextStepsDiv.innerHTML = `
+                  <div class="steps">
+                    <h2 style="margin-bottom: 20px;">📋 完成配置的步骤</h2>
+
+                    <div class="step">
+                      <span class="step-number">1</span>
+                      <strong>访问 EmailJS Dashboard</strong><br>
+                      <a href="https://dashboard.emailjs.com/admin" target="_blank" class="action-button" style="margin-top: 10px;">
+                        前往 EmailJS →
+                      </a>
+                    </div>
+
+                    <div class="step">
+                      <span class="step-number">2</span>
+                      <strong>添加 Gmail 服务</strong><br>
+                      点击 "Email Services" → "Add New Service" → 选择 "Gmail" → 授权你的账户
+                    </div>
+
+                    <div class="step">
+                      <span class="step-number">3</span>
+                      <strong>复制 Service ID</strong><br>
+                      在服务列表中找到你刚添加的 Gmail 服务，复制 Service ID
+                    </div>
+
+                    <div class="step">
+                      <span class="step-number">4</span>
+                      <strong>创建邮件模板</strong><br>
+                      点击 "Email Templates" → "Create New Template" → 设置模板内容 → 复制 Template ID
+                    </div>
+
+                    <div class="step">
+                      <span class="step-number">5</span>
+                      <strong>更新 .env.local 文件</strong><br>
+                      在项目根目录的 .env.local 文件中添加:<br>
+                      <div class="config-value" style="margin-top: 10px;">
+      VITE_EMAILJS_PUBLIC_KEY=Imm-9hpIk6q8f6EDX<br>
+      VITE_EMAILJS_SERVICE_ID=你的Service_ID<br>
+      VITE_EMAILJS_TEMPLATE_ID=你的Template_ID
+                      </div>
+                    </div>
+
+                    <div class="step">
+                      <span class="step-number">6</span>
+                      <strong>重启开发服务器</strong><br>
+                      在终端按 Ctrl+C，然后运行: <code>npm run dev</code>
+                    </div>
+                  </div>
+                `
+              }
+            }
+
+            function createStatusCard(type, icon, title, body) {
+              return `
+                <div class="status-card ${type}">
+                  <div class="status-header">
+                    <div class="status-icon">${icon}</div>
+                    <div class="status-title">${title}</div>
+                  </div>
+                  <div class="status-body">${body}</div>
+                </div>
+              `
+            }
+
+            // 页面加载时执行检查
+            checkConfig()
+    </script>
+  </body>
+</html>
+

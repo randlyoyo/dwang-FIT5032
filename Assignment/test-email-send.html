@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EmailJS 邮件发送测试</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 700px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .btn {
+        background: #667eea;
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s;
+      }
+
+      .btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+      }
+
+      .btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .log {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .log-entry {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+
+      .log-info {
+        background: #d1ecf1;
+        color: #0c5460;
+      }
+
+      .log-success {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .log-error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
+      .log-warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      .config-info {
+        background: #e7f3ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .config-info h3 {
+        margin-bottom: 10px;
+        color: #667eea;
+      }
+
+      .config-item {
+        margin: 5px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📧 EmailJS 邮件发送测试</h1>
+      <p style="color: #666; margin-bottom: 20px">使用真实的 EmailJS API 发送测试邮件</p>
+
+      <div class="config-info">
+        <h3>📋 当前配置</h3>
+        <div class="config-item">Public Key: <strong>Imm-9hpIk6q8f6EDX</strong></div>
+        <div class="config-item">Service ID: <strong>service_dw32qpd</strong></div>
+        <div class="config-item">Template ID: <strong>template_z68nvwb</strong></div>
+      </div>
+
+      <form id="emailForm">
+        <div class="form-group">
+          <label for="toEmail">收件人邮箱 *</label>
+          <input type="email" id="toEmail" required placeholder="your@email.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="fromName">发件人姓名 *</label>
+          <input type="text" id="fromName" required placeholder="张三" value="测试用户" />
+        </div>
+
+        <div class="form-group">
+          <label for="subject">邮件主题 *</label>
+          <input
+            type="text"
+            id="subject"
+            required
+            placeholder="测试邮件"
+            value="EmailJS 测试邮件"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="message">邮件内容 *</label>
+          <textarea id="message" required placeholder="请输入邮件内容">
+这是一封测试邮件，用于验证 EmailJS 配置是否正确。如果你收到这封邮件，说明配置成功！</textarea
+          >
+        </div>
+
+        <button type="submit" class="btn" id="sendBtn">发送测试邮件</button>
+      </form>
+
+      <div class="log" id="log">
+        <div class="log-entry log-info">等待发送邮件...</div>
+      </div>
+    </div>
+
+    <script type="module">
+      // 直接使用配置（不依赖环境变量）
+      const CONFIG = {
+        publicKey: 'Imm-9hpIk6q8f6EDX',
+        serviceId: 'service_dw32qpd',
+        templateId: 'template_z68nvwb',
+      }
+
+      let logContainer = document.getElementById('log')
+      let sendBtn = document.getElementById('sendBtn')
+
+      function addLog(message, type = 'info') {
+        const entry = document.createElement('div')
+        entry.className = `log-entry log-${type}`
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`
+        logContainer.appendChild(entry)
+        logContainer.scrollTop = logContainer.scrollHeight
+      }
+
+      // 动态加载 EmailJS
+      addLog('正在加载 EmailJS SDK...', 'info')
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'
+      script.onload = () => {
+        addLog('✅ EmailJS SDK 加载成功', 'success')
+        initEmailJS()
+      }
+      script.onerror = () => {
+        addLog('❌ EmailJS SDK 加载失败', 'error')
+      }
+      document.head.appendChild(script)
+
+      function initEmailJS() {
+        try {
+          emailjs.init(CONFIG.publicKey)
+          addLog('✅ EmailJS 初始化成功', 'success')
+          addLog(`Public Key: ${CONFIG.publicKey}`, 'info')
+          addLog(`Service ID: ${CONFIG.serviceId}`, 'info')
+          addLog(`Template ID: ${CONFIG.templateId}`, 'info')
+        } catch (error) {
+          addLog(`❌ EmailJS 初始化失败: ${error.message}`, 'error')
+        }
+      }
+
+      document.getElementById('emailForm').addEventListener('submit', async (e) => {
+        e.preventDefault()
+
+        const toEmail = document.getElementById('toEmail').value
+        const fromName = document.getElementById('fromName').value
+        const subject = document.getElementById('subject').value
+        const message = document.getElementById('message').value
+
+        sendBtn.disabled = true
+        sendBtn.textContent = '发送中...'
+
+        addLog('========== 开始发送邮件 ==========', 'info')
+        addLog(`收件人: ${toEmail}`, 'info')
+        addLog(`发件人: ${fromName}`, 'info')
+        addLog(`主题: ${subject}`, 'info')
+
+        const templateParams = {
+          to_email: toEmail,
+          from_name: fromName,
+          subject: subject,
+          message: message,
+          reply_to: toEmail,
+        }
+
+        addLog('发送参数:', 'info')
+        addLog(JSON.stringify(templateParams, null, 2), 'info')
+
+        try {
+          addLog('正在调用 EmailJS API...', 'info')
+
+          const response = await emailjs.send(CONFIG.serviceId, CONFIG.templateId, templateParams)
+
+          addLog('========== 发送成功 ==========', 'success')
+          addLog(`✅ 状态: ${response.status}`, 'success')
+          addLog(`✅ 响应: ${response.text}`, 'success')
+          addLog(`✅ 邮件已发送到: ${toEmail}`, 'success')
+          addLog('⚠️ 请检查收件箱（可能在垃圾邮件中）', 'warning')
+
+          alert(`邮件发送成功！\n\n请检查 ${toEmail} 的收件箱\n（可能在垃圾邮件文件夹中）`)
+        } catch (error) {
+          addLog('========== 发送失败 ==========', 'error')
+          addLog(`❌ 错误类型: ${error.name}`, 'error')
+          addLog(`❌ 错误消息: ${error.message || error.text}`, 'error')
+
+          if (error.text) {
+            addLog(`❌ 详细错误: ${error.text}`, 'error')
+          }
+
+          // 分析常见错误
+          if (error.text && error.text.includes('template')) {
+            addLog('⚠️ 可能原因: Template ID 不正确或模板配置有误', 'warning')
+            addLog('👉 请检查 EmailJS Dashboard 中的模板是否包含以下字段:', 'warning')
+            addLog('   - {{to_email}}', 'warning')
+            addLog('   - {{from_name}}', 'warning')
+            addLog('   - {{subject}}', 'warning')
+            addLog('   - {{message}}', 'warning')
+          } else if (error.text && error.text.includes('service')) {
+            addLog('⚠️ 可能原因: Service ID 不正确或服务未授权', 'warning')
+            addLog('👉 请检查 EmailJS Dashboard 中的 Gmail 服务是否已正确连接', 'warning')
+          } else if (error.text && error.text.includes('limit')) {
+            addLog('⚠️ 可能原因: 已超出免费配额（每月 200 封）', 'warning')
+          }
+
+          alert(`邮件发送失败！\n\n错误: ${error.message || error.text}\n\n请查看控制台日志`)
+        } finally {
+          sendBtn.disabled = false
+          sendBtn.textContent = '发送测试邮件'
+        }
+      })
+
+      // 检查配置
+      addLog('========== 配置检查 ==========', 'info')
+      addLog('✅ 页面加载完成', 'success')
+      addLog('⏳ 等待用户输入...', 'info')
+    </script>
+  </body>
+</html>
+
