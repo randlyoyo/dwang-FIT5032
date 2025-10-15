@@ -11,29 +11,29 @@
               <div class="row">
                 <div class="col-md-6">
                   <h5>Personal Information</h5>
-                  <p><strong>Name:</strong> {{ currentUser.fullName }}</p>
+                  <p>
+                    <strong>Name:</strong>
+                    {{ currentUser.fullName || currentUser.displayName || 'N/A' }}
+                  </p>
                   <p><strong>Email:</strong> {{ currentUser.email }}</p>
                   <p><strong>Role:</strong> {{ currentUser.role }}</p>
-                  <p><strong>Member Since:</strong> {{ formatDate(currentUser.loginTime) }}</p>
                 </div>
                 <div class="col-md-6">
                   <h5>Account Information</h5>
                   <div class="mb-3">
-                    <label class="form-label">Account Status</label>
-                    <span class="badge bg-success">Active</span>
+                    <label class="form-label"><strong>Registration Date:</strong></label>
+                    <p class="text-muted mb-1">
+                      {{ formatDate(currentUser.registrationDate || currentUser.loginTime) }}
+                    </p>
                   </div>
                   <div class="mb-3">
-                    <label class="form-label">User ID</label>
-                    <p class="text-muted">{{ currentUser.id || 'N/A' }}</p>
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label">Registration Date</label>
-                    <p class="text-muted">{{ formatDate(currentUser.loginTime) }}</p>
+                    <label class="form-label"><strong>Account Status:</strong></label>
+                    <span class="badge bg-success ms-2">Active</span>
                   </div>
                 </div>
               </div>
 
-              <hr>
+              <hr />
 
               <h5>Account Actions</h5>
               <div class="d-flex gap-2">
@@ -48,22 +48,41 @@
               <div class="mt-4">
                 <h5>Account Statistics</h5>
                 <div class="row text-center">
-                  <div class="col-4">
+                  <div class="col-3">
                     <div class="bg-light p-3 rounded">
                       <h4 class="text-primary">{{ stats.savedRecipes }}</h4>
                       <small>Saved Recipes</small>
                     </div>
                   </div>
-                  <div class="col-4">
+                  <div class="col-3">
                     <div class="bg-light p-3 rounded">
                       <h4 class="text-success">{{ stats.favoriteRecipes }}</h4>
                       <small>Favorites</small>
                     </div>
                   </div>
-                  <div class="col-4">
+                  <div class="col-3">
                     <div class="bg-light p-3 rounded">
-                      <h4 class="text-info">{{ stats.loginCount }}</h4>
+                      <h4 class="text-info">{{ stats.recipesCreated || 0 }}</h4>
+                      <small>Created Recipes</small>
+                    </div>
+                  </div>
+                  <div class="col-3">
+                    <div class="bg-light p-3 rounded">
+                      <h4 class="text-warning">{{ stats.loginCount }}</h4>
                       <small>Login Count</small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cloud Functions统计信息 -->
+                <div v-if="stats.memberSince || stats.lastLogin" class="mt-3">
+                  <h6>Server Statistics (via Cloud Functions)</h6>
+                  <div class="row">
+                    <div class="col-md-6" v-if="stats.memberSince">
+                      <p><strong>Member Since:</strong> {{ formatDate(stats.memberSince) }}</p>
+                    </div>
+                    <div class="col-md-6" v-if="stats.lastLogin">
+                      <p><strong>Last Login:</strong> {{ formatDate(stats.lastLogin) }}</p>
                     </div>
                   </div>
                 </div>
@@ -80,15 +99,20 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authMiddleware } from '../middleware/auth.js'
+import * as cloudFunctions from '../services/cloudFunctions.js'
 
 const router = useRouter()
 
-const currentUser = computed(() => authMiddleware.getCurrentUser())
+const currentUser = computed(() => {
+  const user = authMiddleware.getCurrentUser()
+  console.log('Profile - currentUser:', user)
+  return user
+})
 
 const stats = ref({
   savedRecipes: 0,
   favoriteRecipes: 0,
-  loginCount: 0
+  loginCount: 0,
 })
 
 // 移除复杂的会话状态检查
@@ -103,22 +127,42 @@ onMounted(() => {
   // 记录用户访问个人资料
   authMiddleware.logSecurityEvent('profile_access', {
     username: currentUser.value?.username,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 
   // 加载统计数据
   loadStats()
 })
 
-const loadStats = () => {
+const loadStats = async () => {
   // 从localStorage加载用户数据
   const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
   const favoriteRecipes = JSON.parse(localStorage.getItem('favoriteRecipes') || '[]')
 
+  // 基础统计数据
   stats.value = {
     savedRecipes: savedRecipes.length,
     favoriteRecipes: favoriteRecipes.length,
-    loginCount: currentUser.value?.loginCount || 1
+    loginCount: currentUser.value?.loginCount || 1,
+  }
+
+  // 使用Cloud Functions获取服务器端统计数据
+  try {
+    const serverStats = await cloudFunctions.getUserStats()
+    if (serverStats && serverStats.success) {
+      // 合并服务器端统计数据
+      stats.value = {
+        ...stats.value,
+        recipesCreated: serverStats.stats.recipesCreated || 0,
+        memberSince: serverStats.stats.memberSince,
+        lastLogin: serverStats.stats.lastLogin,
+        isActive: serverStats.stats.isActive,
+        role: serverStats.stats.role,
+      }
+    }
+  } catch (error) {
+    console.error('Error loading server stats:', error)
+    // 如果Cloud Functions失败，继续使用本地数据
   }
 }
 
@@ -131,7 +175,7 @@ const logout = () => {
   if (confirm('Are you sure you want to logout?')) {
     authMiddleware.logSecurityEvent('user_logout', {
       username: currentUser.value?.username,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
     authMiddleware.logout()
     router.push({ name: 'Home' })
@@ -143,7 +187,7 @@ const exportData = () => {
     profile: currentUser.value,
     savedRecipes: JSON.parse(localStorage.getItem('savedRecipes') || '[]'),
     favoriteRecipes: JSON.parse(localStorage.getItem('favoriteRecipes') || '[]'),
-    exportDate: new Date().toISOString()
+    exportDate: new Date().toISOString(),
   }
 
   const dataStr = JSON.stringify(userData, null, 2)
@@ -159,7 +203,7 @@ const exportData = () => {
 
   authMiddleware.logSecurityEvent('data_export', {
     username: currentUser.value?.username,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 
   alert('User data exported successfully!')

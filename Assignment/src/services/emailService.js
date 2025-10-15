@@ -29,7 +29,16 @@ class SecureEmailService {
     if (!this.config.security.enableDomainWhitelist) return true
 
     const currentDomain = window.location.hostname
-    return this.config.security.allowedDomains.includes(currentDomain)
+    const isAllowed = this.config.security.allowedDomains.includes(currentDomain)
+
+    if (!isAllowed) {
+      console.warn(
+        `Domain ${currentDomain} not in whitelist. Allowed domains:`,
+        this.config.security.allowedDomains,
+      )
+    }
+
+    return isAllowed
   }
 
   // 检查发送频率限制
@@ -210,7 +219,3 @@ class SecureEmailService {
 const emailService = new SecureEmailService()
 
 export default emailService
-
-
-
-

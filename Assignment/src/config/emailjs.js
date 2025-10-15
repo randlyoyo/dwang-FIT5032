@@ -10,9 +10,16 @@ const emailjsConfig = {
   // 安全设置
   security: {
     // 启用域名白名单
-    enableDomainWhitelist: true,
+    enableDomainWhitelist: false, // 暂时禁用域名白名单限制
     // 允许的域名列表
-    allowedDomains: ['localhost', '127.0.0.1', 'your-production-domain.com'],
+    allowedDomains: [
+      'localhost',
+      '127.0.0.1',
+      'assignment-cfc8f.web.app',
+      'gmail.com',
+      'outlook.com',
+      'yahoo.com',
+    ],
 
     // 启用发送频率限制
     enableRateLimit: true,

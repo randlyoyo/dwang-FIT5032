@@ -20,11 +20,14 @@
       }
     ]
   },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs18",
-    "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log"]
-  },
+  "functions": [
+    {
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log"],
+      "source": "functions",
+      "runtime": "nodejs22"
+    }
+  ],
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

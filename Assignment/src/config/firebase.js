@@ -1,6 +1,7 @@
 // Firebase配置文件
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
 
 // Firebase配置 - 从Firebase控制台获取
 const firebaseConfig = {
@@ -18,6 +19,9 @@ const app = initializeApp(firebaseConfig)
 
 // 初始化Firebase Auth
 export const auth = getAuth(app)
+
+// 初始化Firestore
+export const db = getFirestore(app)
 
 // 导出 app 实例（支持命名导出和默认导出）
 export { app }

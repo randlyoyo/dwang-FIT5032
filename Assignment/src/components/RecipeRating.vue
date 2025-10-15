@@ -7,7 +7,7 @@
           v-for="star in 5"
           :key="star"
           class="star"
-          :class="{ 'active': star <= currentRating, 'hover': star <= hoverRating }"
+          :class="{ active: star <= currentRating, hover: star <= hoverRating }"
           @click="setRating(star)"
           @mouseenter="hoverRating = star"
           @mouseleave="hoverRating = 0"
@@ -25,7 +25,11 @@
         ></textarea>
         <small class="text-muted">{{ reviewText.length }}/300 characters</small>
       </div>
-      <button @click="submitRating" class="btn btn-success btn-sm mt-2" :disabled="currentRating === 0">
+      <button
+        @click="submitRating"
+        class="btn btn-success btn-sm mt-2"
+        :disabled="currentRating === 0"
+      >
         Submit Rating
       </button>
     </div>
@@ -37,7 +41,7 @@
             v-for="star in 5"
             :key="star"
             class="star-display"
-            :class="{ 'active': star <= userRating }"
+            :class="{ active: star <= userRating }"
           >
             ★
           </span>
@@ -45,9 +49,7 @@
         <span class="rating-text">{{ userRating }}/5</span>
       </div>
       <p v-if="userReview" class="review-text mt-2">{{ userReview }}</p>
-      <button @click="editRating" class="btn btn-outline-primary btn-sm mt-1">
-        Edit Rating
-      </button>
+      <button @click="editRating" class="btn btn-outline-primary btn-sm mt-1">Edit Rating</button>
     </div>
 
     <!-- Overall Rating Display for this recipe -->
@@ -58,7 +60,7 @@
           v-for="star in 5"
           :key="star"
           class="star-display"
-          :class="{ 'active': star <= Math.round(overallRating) }"
+          :class="{ active: star <= Math.round(overallRating) }"
         >
           ★
         </span>
@@ -74,12 +76,12 @@ import { ref, computed, onMounted } from 'vue'
 const props = defineProps({
   recipeId: {
     type: Number,
-    required: true
+    required: true,
   },
   recipeName: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const currentRating = ref(0)
@@ -110,8 +112,8 @@ const loadRatings = () => {
 
 const checkUserRating = () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
-  if (currentUser.id) {
-    const userRatingData = allRatings.value.find(rating => rating.userId === currentUser.id)
+  if (currentUser.uid) {
+    const userRatingData = allRatings.value.find((rating) => rating.userId === currentUser.uid)
     if (userRatingData) {
       hasRated.value = true
       userRating.value = userRatingData.rating
@@ -127,19 +129,19 @@ const setRating = (rating) => {
 const submitRating = () => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
 
-  if (!currentUser.id) {
+  if (!currentUser.uid) {
     alert('Please login to rate recipes')
     return
   }
 
   const ratingData = {
-    userId: currentUser.id,
-    userName: currentUser.fullName,
+    userId: currentUser.uid,
+    userName: currentUser.fullName || currentUser.displayName || currentUser.email,
     recipeId: props.recipeId,
     recipeName: props.recipeName,
     rating: currentRating.value,
     review: reviewText.value.trim(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 
   // Update ratings in localStorage
@@ -149,7 +151,7 @@ const submitRating = () => {
   }
 
   // Remove existing rating from this user
-  ratings[props.recipeId] = ratings[props.recipeId].filter(r => r.userId !== currentUser.id)
+  ratings[props.recipeId] = ratings[props.recipeId].filter((r) => r.userId !== currentUser.uid)
 
   // Add new rating
   ratings[props.recipeId].push(ratingData)

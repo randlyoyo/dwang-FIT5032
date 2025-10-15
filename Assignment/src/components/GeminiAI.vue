@@ -545,8 +545,7 @@ const getCookingTips = async () => {
 .hero-section {
   background:
     linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-    url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1920&h=600&fit=crop')
-      center/cover;
+    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 400px;
   display: flex;
   align-items: center;

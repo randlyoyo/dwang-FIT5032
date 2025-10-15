@@ -3,12 +3,10 @@
     <div class="container">
       <div class="row">
         <div class="col-12">
-          <h2 class="text-center mb-4"><i class="bi bi-shield-lock-fill me-2"></i>Admin Panel</h2>
+          <h2 class="text-center mb-4"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</h2>
           <div class="alert alert-info">
             <h5>Welcome, {{ currentUser.fullName || currentUser.email }}!</h5>
-            <p class="mb-0">
-              Manage users, recipes, and view system analytics with real-time Firebase data.
-            </p>
+            <p class="mb-0">Manage users, recipes, create new content and view system analytics.</p>
           </div>
 
           <!-- Loading State -->
@@ -23,15 +21,6 @@
           <div v-else>
             <!-- Tab Navigation -->
             <ul class="nav nav-tabs mb-4" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button
-                  class="nav-link"
-                  :class="{ active: activeTab === 'overview' }"
-                  @click="activeTab = 'overview'"
-                >
-                  <i class="bi bi-speedometer2 me-2"></i>Overview
-                </button>
-              </li>
               <li class="nav-item" role="presentation">
                 <button
                   class="nav-link"
@@ -53,6 +42,15 @@
               <li class="nav-item" role="presentation">
                 <button
                   class="nav-link"
+                  :class="{ active: activeTab === 'create' }"
+                  @click="activeTab = 'create'"
+                >
+                  <i class="bi bi-plus-circle me-2"></i>Create Recipe
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
                   :class="{ active: activeTab === 'analytics' }"
                   @click="activeTab = 'analytics'"
                 >
@@ -60,177 +58,6 @@
                 </button>
               </li>
             </ul>
-
-            <!-- Overview Tab -->
-            <div v-show="activeTab === 'overview'" class="fade-in">
-              <!-- Statistics Cards -->
-              <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                  <div class="stat-card card border-0 shadow-sm">
-                    <div class="card-body text-center">
-                      <div class="stat-icon bg-primary bg-opacity-10">
-                        <i class="bi bi-people-fill text-primary"></i>
-                      </div>
-                      <h3 class="mt-3 mb-1">{{ stats.totalUsers }}</h3>
-                      <p class="text-muted mb-0">Total Users</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <div class="stat-card card border-0 shadow-sm">
-                    <div class="card-body text-center">
-                      <div class="stat-icon bg-success bg-opacity-10">
-                        <i class="bi bi-book-fill text-success"></i>
-                      </div>
-                      <h3 class="mt-3 mb-1">{{ stats.totalRecipes }}</h3>
-                      <p class="text-muted mb-0">Total Recipes</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <div class="stat-card card border-0 shadow-sm">
-                    <div class="card-body text-center">
-                      <div class="stat-icon bg-warning bg-opacity-10">
-                        <i class="bi bi-eye-fill text-warning"></i>
-                      </div>
-                      <h3 class="mt-3 mb-1">{{ stats.publishedRecipes }}</h3>
-                      <p class="text-muted mb-0">Published Recipes</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                  <div class="stat-card card border-0 shadow-sm">
-                    <div class="card-body text-center">
-                      <div class="stat-icon bg-info bg-opacity-10">
-                        <i class="bi bi-person-check-fill text-info"></i>
-                      </div>
-                      <h3 class="mt-3 mb-1">{{ stats.activeUsers }}</h3>
-                      <p class="text-muted mb-0">Active Users</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quick Actions -->
-              <div class="row">
-                <div class="col-12 mb-4">
-                  <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
-                      <h5 class="mb-0">
-                        <i class="bi bi-lightning-fill me-2 text-warning"></i>Quick Actions
-                      </h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="row">
-                        <div class="col-md-4 mb-2">
-                          <button class="btn btn-outline-primary w-100" @click="refreshData">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
-                          </button>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                          <button
-                            class="btn btn-outline-success w-100"
-                            @click="activeTab = 'users'"
-                          >
-                            <i class="bi bi-people me-2"></i>Manage Users
-                          </button>
-                        </div>
-                        <div class="col-md-4 mb-2">
-                          <button class="btn btn-outline-info w-100" @click="activeTab = 'recipes'">
-                            <i class="bi bi-book me-2"></i>View Recipes
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Recent Activity -->
-              <div class="row">
-                <div class="col-md-6 mb-4">
-                  <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
-                      <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Users</h5>
-                    </div>
-                    <div class="card-body">
-                      <div v-if="recentUsers.length === 0" class="text-center text-muted py-3">
-                        No users yet
-                      </div>
-                      <div v-else class="list-group list-group-flush">
-                        <div
-                          v-for="user in recentUsers.slice(0, 5)"
-                          :key="user.uid"
-                          class="list-group-item border-0 px-0"
-                        >
-                          <div class="d-flex align-items-center">
-                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3">
-                              {{ user.email.charAt(0).toUpperCase() }}
-                            </div>
-                            <div class="flex-grow-1">
-                              <h6 class="mb-0">{{ user.displayName || user.email }}</h6>
-                              <small class="text-muted">{{ user.email }}</small>
-                            </div>
-                            <span class="badge bg-success">{{ user.role }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6 mb-4">
-                  <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white">
-                      <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>System Status</h5>
-                    </div>
-                    <div class="card-body">
-                      <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                          <span>Database Connection</span>
-                          <span class="badge bg-success">Active</span>
-                        </div>
-                        <div class="progress" style="height: 5px">
-                          <div
-                            class="progress-bar bg-success"
-                            role="progressbar"
-                            style="width: 100%"
-                          ></div>
-                        </div>
-                      </div>
-                      <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                          <span>User Registration Rate</span>
-                          <span class="text-muted">{{ stats.totalUsers }} total</span>
-                        </div>
-                        <div class="progress" style="height: 5px">
-                          <div
-                            class="progress-bar bg-primary"
-                            role="progressbar"
-                            :style="{ width: Math.min((stats.totalUsers / 100) * 100, 100) + '%' }"
-                          ></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div class="d-flex justify-content-between mb-1">
-                          <span>Recipe Collection</span>
-                          <span class="text-muted">{{ stats.totalRecipes }} total</span>
-                        </div>
-                        <div class="progress" style="height: 5px">
-                          <div
-                            class="progress-bar bg-success"
-                            role="progressbar"
-                            :style="{
-                              width: Math.min((stats.totalRecipes / 100) * 100, 100) + '%',
-                            }"
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <!-- Users Tab -->
             <div v-show="activeTab === 'users'" class="fade-in">
@@ -245,6 +72,242 @@
                 </div>
                 <div class="card-body">
                   <RecipeList />
+                </div>
+              </div>
+            </div>
+
+            <!-- Create Recipe Tab -->
+            <div v-show="activeTab === 'create'" class="fade-in">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                  <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Create New Recipe</h5>
+                </div>
+                <div class="card-body">
+                  <form @submit.prevent="saveRecipe('publish')">
+                    <div class="row">
+                      <!-- Basic Information -->
+                      <div class="col-md-8">
+                        <h6 class="mb-3">Basic Information</h6>
+
+                        <div class="mb-3">
+                          <label class="form-label">Recipe Title *</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            v-model="recipeForm.title"
+                            required
+                            placeholder="Enter recipe title"
+                          />
+                        </div>
+
+                        <div class="mb-3">
+                          <label class="form-label">Description *</label>
+                          <textarea
+                            class="form-control"
+                            rows="3"
+                            v-model="recipeForm.description"
+                            required
+                            placeholder="Brief description of the recipe"
+                          ></textarea>
+                        </div>
+
+                        <div class="row">
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Prep Time (minutes) *</label>
+                            <input
+                              type="number"
+                              class="form-control"
+                              v-model.number="recipeForm.prepTime"
+                              required
+                              min="0"
+                            />
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Cook Time (minutes) *</label>
+                            <input
+                              type="number"
+                              class="form-control"
+                              v-model.number="recipeForm.cookTime"
+                              required
+                              min="0"
+                            />
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Servings *</label>
+                            <input
+                              type="number"
+                              class="form-control"
+                              v-model.number="recipeForm.servings"
+                              required
+                              min="1"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="row">
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Calories *</label>
+                            <input
+                              type="number"
+                              class="form-control"
+                              v-model.number="recipeForm.calories"
+                              required
+                              min="0"
+                            />
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Protein (g) *</label>
+                            <input
+                              type="number"
+                              class="form-control"
+                              v-model.number="recipeForm.protein"
+                              required
+                              min="0"
+                              step="0.1"
+                            />
+                          </div>
+                          <div class="col-md-4 mb-3">
+                            <label class="form-label">Difficulty *</label>
+                            <select class="form-control" v-model="recipeForm.difficulty" required>
+                              <option value="">Select difficulty</option>
+                              <option value="Easy">Easy</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Hard">Hard</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <!-- Ingredients -->
+                        <h6 class="mb-3 mt-4">Ingredients</h6>
+                        <div
+                          v-for="(ingredient, index) in recipeForm.ingredients"
+                          :key="index"
+                          class="mb-2"
+                        >
+                          <div class="input-group">
+                            <input
+                              type="text"
+                              class="form-control"
+                              v-model="recipeForm.ingredients[index]"
+                              placeholder="e.g., 2 cups flour"
+                            />
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger"
+                              @click="removeIngredient(index)"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary btn-sm"
+                          @click="addIngredient"
+                        >
+                          <i class="bi bi-plus"></i> Add Ingredient
+                        </button>
+
+                        <!-- Instructions -->
+                        <h6 class="mb-3 mt-4">Instructions</h6>
+                        <div
+                          v-for="(step, index) in recipeForm.instructions"
+                          :key="index"
+                          class="mb-2"
+                        >
+                          <div class="input-group">
+                            <span class="input-group-text">{{ index + 1 }}</span>
+                            <textarea
+                              class="form-control"
+                              rows="2"
+                              v-model="recipeForm.instructions[index]"
+                              placeholder="Describe this step"
+                            ></textarea>
+                            <button
+                              type="button"
+                              class="btn btn-outline-danger"
+                              @click="removeInstruction(index)"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-outline-primary btn-sm"
+                          @click="addInstruction"
+                        >
+                          <i class="bi bi-plus"></i> Add Step
+                        </button>
+                      </div>
+
+                      <!-- Sidebar -->
+                      <div class="col-md-4">
+                        <h6 class="mb-3">Additional Details</h6>
+
+                        <div class="mb-3">
+                          <label class="form-label">Image URL</label>
+                          <input
+                            type="url"
+                            class="form-control"
+                            v-model="recipeForm.imageUrl"
+                            placeholder="https://example.com/image.jpg"
+                          />
+                        </div>
+
+                        <div class="mb-3">
+                          <label class="form-label">Tags (comma separated)</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            v-model="recipeForm.tagsInput"
+                            placeholder="healthy, vegan, quick"
+                          />
+                        </div>
+
+                        <div class="mb-3">
+                          <label class="form-label">Category</label>
+                          <select class="form-control" v-model="recipeForm.category">
+                            <option value="">Select category</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Snack">Snack</option>
+                            <option value="Dessert">Dessert</option>
+                          </select>
+                        </div>
+
+                        <div class="alert alert-info">
+                          <small>
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Tip:</strong> You can save this recipe as a draft to continue
+                            editing later.
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4 pt-3 border-top">
+                      <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" @click="resetForm">
+                          <i class="bi bi-x-circle me-2"></i>Clear Form
+                        </button>
+                        <div>
+                          <button
+                            type="button"
+                            class="btn btn-outline-primary me-2"
+                            @click="saveRecipe('draft')"
+                          >
+                            <i class="bi bi-file-earmark me-2"></i>Save as Draft
+                          </button>
+                          <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-2"></i>Publish Recipe
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -272,7 +335,7 @@ import InteractiveCharts from './InteractiveCharts.vue'
 
 const router = useRouter()
 const db = getFirestore(app)
-const activeTab = ref('overview')
+const activeTab = ref('users')
 const loading = ref(true)
 
 const currentUser = computed(() => authMiddleware.getCurrentUser())
@@ -285,6 +348,112 @@ const stats = ref({
 })
 
 const recentUsers = ref([])
+
+// Recipe Form Data
+const recipeForm = ref({
+  title: '',
+  description: '',
+  prepTime: 0,
+  cookTime: 0,
+  servings: 1,
+  calories: 0,
+  protein: 0,
+  difficulty: '',
+  ingredients: [''],
+  instructions: [''],
+  imageUrl: '',
+  tagsInput: '',
+  category: '',
+})
+
+// Recipe Form Methods
+const addIngredient = () => {
+  recipeForm.value.ingredients.push('')
+}
+
+const removeIngredient = (index) => {
+  if (recipeForm.value.ingredients.length > 1) {
+    recipeForm.value.ingredients.splice(index, 1)
+  }
+}
+
+const addInstruction = () => {
+  recipeForm.value.instructions.push('')
+}
+
+const removeInstruction = (index) => {
+  if (recipeForm.value.instructions.length > 1) {
+    recipeForm.value.instructions.splice(index, 1)
+  }
+}
+
+const resetForm = () => {
+  recipeForm.value = {
+    title: '',
+    description: '',
+    prepTime: 0,
+    cookTime: 0,
+    servings: 1,
+    calories: 0,
+    protein: 0,
+    difficulty: '',
+    ingredients: [''],
+    instructions: [''],
+    imageUrl: '',
+    tagsInput: '',
+    category: '',
+  }
+}
+
+const saveRecipe = async (status) => {
+  try {
+    // Parse tags
+    const tags = recipeForm.value.tagsInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter((tag) => tag)
+
+    // Prepare recipe data
+    const recipeData = {
+      title: recipeForm.value.title,
+      name: recipeForm.value.title,
+      description: recipeForm.value.description,
+      prepTime: recipeForm.value.prepTime,
+      cookTime: recipeForm.value.cookTime,
+      servings: recipeForm.value.servings,
+      calories: recipeForm.value.calories,
+      protein: recipeForm.value.protein,
+      difficulty: recipeForm.value.difficulty,
+      ingredients: recipeForm.value.ingredients.filter((i) => i.trim()),
+      instructions: recipeForm.value.instructions.filter((i) => i.trim()),
+      imageUrl:
+        recipeForm.value.imageUrl ||
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=400&fit=crop',
+      tags: tags,
+      category: recipeForm.value.category || 'General',
+      status: status, // 'draft' or 'publish'
+      rating: 0,
+      createdBy: currentUser.value.uid,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    // Save to Firestore
+    const { addDoc } = await import('firebase/firestore')
+    await addDoc(collection(db, 'recipes'), recipeData)
+
+    alert(`Recipe ${status === 'draft' ? 'saved as draft' : 'published'} successfully!`)
+
+    // Reset form and switch to recipes tab
+    resetForm()
+    if (status === 'publish') {
+      activeTab.value = 'recipes'
+    }
+  } catch (error) {
+    console.error('Error saving recipe:', error)
+    alert('Failed to save recipe: ' + error.message)
+  }
+}
 
 onMounted(async () => {
   // 检查管理员权限

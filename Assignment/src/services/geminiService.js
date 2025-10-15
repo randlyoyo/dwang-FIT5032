@@ -4,8 +4,6 @@
  * Provides AI-powered features using Google's Gemini API
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
 class GeminiService {
   constructor() {
     // Get API key from environment variable
@@ -15,14 +13,24 @@ class GeminiService {
       console.warn('⚠️ Gemini API key not found. Using mock mode.')
       this.isMockMode = true
       this.apiKey = null
+      this.genAI = null
+      this.model = null
     } else {
-      console.log('✅ Gemini API key detected. Real AI mode enabled.')
-      this.genAI = new GoogleGenerativeAI(apiKey)
-      // Use gemini-2.5-flash (latest stable model)
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-      this.isMockMode = false
-      this.apiKey = apiKey.substring(0, 10) + '...' // Store masked version for display
-      console.log('Model initialized: gemini-2.5-flash')
+      try {
+        console.log('✅ Gemini API key detected. Real AI mode enabled.')
+        // Lazy load the Google AI library only when needed
+        this.apiKey = apiKey
+        this.isMockMode = false
+        this.genAI = null // Will be initialized on first use
+        this.model = null
+        console.log('Real AI mode ready (lazy loading)')
+      } catch (error) {
+        console.warn('⚠️ Error initializing Gemini AI. Using mock mode.', error)
+        this.isMockMode = true
+        this.apiKey = null
+        this.genAI = null
+        this.model = null
+      }
     }
   }
 
@@ -110,10 +118,19 @@ class GeminiService {
    */
   async generateContent(prompt) {
     if (this.isMockMode) {
-      return this.getMockResponse(prompt)
+      return await this.getMockResponse(prompt)
     }
 
     try {
+      // Lazy load the Google AI library
+      if (!this.genAI) {
+        console.log('🔄 Lazy loading Google AI library...')
+        const { GoogleGenerativeAI } = await import('@google/generative-ai')
+        this.genAI = new GoogleGenerativeAI(this.apiKey)
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+        console.log('✅ Google AI library loaded')
+      }
+
       const result = await this.model.generateContent(prompt)
       const response = await result.response
       const text = response.text()
@@ -135,14 +152,25 @@ class GeminiService {
       return { text }
     } catch (error) {
       console.error('Gemini API Error:', error)
-      throw new Error('Failed to generate AI content: ' + error.message)
+      // Fallback to mock mode if API fails
+      console.log('Falling back to mock mode due to API error')
+      return this.getMockResponse(prompt)
     }
   }
 
   /**
    * Mock responses for testing without API key
    */
-  getMockResponse(prompt) {
+  async getMockResponse(prompt) {
+    console.log('🤖 Mock AI: Processing request...', prompt.substring(0, 50) + '...')
+    const startTime = Date.now()
+
+    // Add a small delay to simulate real API response time (reduced for better UX)
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    const endTime = Date.now()
+    console.log(`🤖 Mock AI: Response generated in ${endTime - startTime}ms`)
+
     if (prompt.includes('recipe ideas')) {
       return [
         {

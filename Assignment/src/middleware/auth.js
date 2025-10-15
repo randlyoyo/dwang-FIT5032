@@ -16,23 +16,9 @@ export const authMiddleware = {
 
   // 获取当前用户信息（支持Firebase）
   getCurrentUser() {
-    // 首先尝试从Firebase获取用户信息
-    if (firebaseAuthService.isAuthenticated()) {
-      const firebaseUser = firebaseAuthService.getUserData()
-      if (firebaseUser) {
-        return {
-          username: firebaseUser.email,
-          email: firebaseUser.email,
-          fullName: firebaseUser.displayName,
-          role: firebaseUser.role,
-          uid: firebaseUser.uid,
-          emailVerified: firebaseUser.emailVerified,
-        }
-      }
-    }
-
-    // 回退到本地存储
+    // 从本地存储获取用户信息（已在登录时保存完整信息）
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
+    console.log('authMiddleware.getCurrentUser - returning:', currentUser)
     return currentUser
   },
 
@@ -67,13 +53,20 @@ export const authMiddleware = {
   // 简化登录
   login(userData) {
     try {
+      console.log('authMiddleware.login - received userData:', userData)
+
       // 验证用户数据
       if (!this.validateUserData(userData)) {
+        console.error('authMiddleware.login - validation failed for:', userData)
         throw new Error('Invalid user data provided')
       }
 
       // 存储用户数据
       localStorage.setItem('currentUser', JSON.stringify(userData))
+
+      // 验证存储
+      const stored = JSON.parse(localStorage.getItem('currentUser'))
+      console.log('authMiddleware.login - stored userData:', stored)
 
       // 记录登录日志
       this.logSecurityEvent('user_login', {

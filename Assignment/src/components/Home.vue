@@ -88,43 +88,31 @@
         <!-- Recipes Display -->
         <div v-else class="row g-4">
           <!-- Dynamic Recipe Cards from Firestore -->
-          <div v-for="recipe in featuredRecipes" :key="recipe.id" class="col-md-4">
-            <div
-              class="card recipe-card h-100 shadow-sm"
-              @click="viewRecipe(recipe.id)"
-              role="button"
-              tabindex="0"
-              @keypress.enter="viewRecipe(recipe.id)"
-              :aria-label="`View recipe: ${recipe.name}`"
-            >
+          <div v-for="(recipe, index) in featuredRecipes" :key="recipe.id" class="col-md-4">
+            <div class="card recipe-card h-100 shadow-sm">
               <div
-                class="recipe-image"
-                :style="{
-                  backgroundImage: `url(${recipe.imageUrl || 'https://via.placeholder.com/400x300?text=Recipe'})`,
-                }"
+                class="recipe-image-header"
+                :style="{ backgroundImage: `url(${getRecipeImage(index)})` }"
               >
                 <div class="recipe-badge" v-if="recipe.difficulty">
                   <span class="badge bg-success">{{ recipe.difficulty }}</span>
                 </div>
               </div>
               <div class="card-body">
-                <h3 class="card-title h5">{{ recipe.name || 'Untitled Recipe' }}</h3>
+                <h3 class="card-title h5">{{ recipe.name }}</h3>
                 <p class="card-text text-muted small">
-                  {{
-                    recipe.instructions && recipe.instructions[0]
-                      ? recipe.instructions[0].substring(0, 100) + '...'
-                      : 'Delicious and nutritious recipe.'
-                  }}
+                  {{ recipe.description.substring(0, 100)
+                  }}{{ recipe.description.length > 100 ? '...' : '' }}
                 </p>
                 <div class="recipe-meta d-flex justify-content-between align-items-center mt-3">
                   <span class="text-muted small">
-                    <i class="bi bi-clock me-1"></i>{{ recipe.prepTime || '30' }} min
+                    <i class="bi bi-clock me-1"></i>{{ recipe.prepTime + recipe.cookTime }} min
                   </span>
-                  <span class="text-muted small" v-if="recipe.calories">
+                  <span class="text-muted small">
                     <i class="bi bi-fire me-1"></i>{{ recipe.calories }} cal
                   </span>
                   <span class="text-success small">
-                    <i class="bi bi-star-fill me-1"></i>{{ recipe.rating || '4.5' }}
+                    <i class="bi bi-star-fill me-1"></i>{{ recipe.rating }}
                   </span>
                 </div>
                 <div class="mt-3" v-if="recipe.tags && recipe.tags.length">
@@ -135,6 +123,11 @@
                   >
                     {{ tag }}
                   </span>
+                </div>
+                <div class="mt-3">
+                  <button class="btn btn-outline-success w-100" @click="viewRecipe(recipe.id)">
+                    <i class="bi bi-eye me-2"></i>View Details
+                  </button>
                 </div>
               </div>
             </div>
@@ -148,7 +141,7 @@
         </div>
 
         <!-- View All Button -->
-        <div class="text-center mt-5" v-if="featuredRecipes.length > 0">
+        <div class="text-center mt-5">
           <button class="btn btn-success btn-lg" @click="navigateToRecipes">
             <i class="bi bi-collection me-2"></i>View All Recipes
           </button>
@@ -256,10 +249,24 @@ const fetchFeaturedRecipes = async () => {
     const recipesQuery = query(collection(db, 'recipes'), limit(3))
     const querySnapshot = await getDocs(recipesQuery)
 
-    featuredRecipes.value = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
+    featuredRecipes.value = querySnapshot.docs.map((doc) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        name: data.title || data.name || 'Untitled Recipe',
+        description: data.description || 'Delicious and nutritious recipe.',
+        imageUrl:
+          data.imageUrl ||
+          'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop',
+        difficulty: data.difficulty || 'Medium',
+        prepTime: data.prepTime || 30,
+        cookTime: data.cookTime || 30,
+        calories: data.calories || 0,
+        rating: data.rating || 4.5,
+        tags: data.tags || [],
+        instructions: data.instructions || [],
+      }
+    })
   } catch (error) {
     console.error('Error fetching recipes:', error)
     // Fallback to default recipes if fetch fails
@@ -271,6 +278,16 @@ const fetchFeaturedRecipes = async () => {
 
 const viewRecipe = (recipeId) => {
   router.push({ name: 'Recipes', query: { id: recipeId } })
+}
+
+// Get recipe image based on index (using provided images)
+const getRecipeImage = (index) => {
+  const images = [
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop', // 第一张：烤肉配薄荷
+    'https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=600&h=400&fit=crop', // 第二张：彩椒酿饭
+    'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&h=400&fit=crop', // 第三张：鸡肉炒蔬菜
+  ]
+  return images[index] || images[0]
 }
 
 onMounted(() => {
@@ -361,40 +378,33 @@ onMounted(() => {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
-  cursor: pointer;
 }
 
 .recipe-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2) !important;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
 }
 
-.recipe-card:focus {
-  outline: 3px solid #28a745;
-  outline-offset: 2px;
-}
-
-.recipe-image {
+.recipe-image-header {
   height: 250px;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   position: relative;
-  background-color: #f5f7fa;
+  border-radius: 12px 12px 0 0;
+  transition: transform 0.3s ease;
+  overflow: hidden;
 }
 
-.recipe-image-placeholder {
-  height: 250px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.recipe-card:hover .recipe-image-header {
+  transform: scale(1.05);
 }
 
 .recipe-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 15px;
+  right: 15px;
+  z-index: 1;
 }
 
 .recipe-card .card-title {

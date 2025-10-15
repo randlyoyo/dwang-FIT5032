@@ -23,12 +23,348 @@ const isAuthenticated = computed(() => {
 const isAdmin = computed(() => {
   // 依赖authState来触发重新计算
   authState.value
-  return authMiddleware.isAdmin()
+  const adminStatus = authMiddleware.isAdmin()
+  const currentUser = authMiddleware.getCurrentUser()
+  console.log('App.vue - isAdmin check:', {
+    adminStatus,
+    userRole: currentUser?.role,
+    currentUser,
+  })
+  return adminStatus
 })
 
 // 强制更新认证状态
 const refreshAuthState = () => {
   authState.value++
+}
+
+// 无障碍功能状态 - 添加键盘控制和阅读功能
+const accessibilityState = ref({
+  accessibilityMode: false, // 主要无障碍模式开关
+  textToSpeech: false, // 文本朗读功能
+  keyboardNavigation: false, // 键盘导航功能
+})
+
+// 键盘导航状态
+const keyboardNavState = ref({
+  currentIndex: -1,
+  focusableElements: [],
+  isActive: false,
+})
+
+// 文本朗读功能
+const speechSynthesis = ref(null)
+const isSpeaking = ref(false)
+
+// 切换无障碍模式 - 简化版
+const toggleAccessibilityMode = () => {
+  accessibilityState.value.accessibilityMode = !accessibilityState.value.accessibilityMode
+
+  if (accessibilityState.value.accessibilityMode) {
+    // 启用无障碍模式
+    enableAccessibilityMode()
+  } else {
+    // 禁用无障碍模式
+    disableAccessibilityMode()
+  }
+
+  // 保存到localStorage
+  localStorage.setItem('accessibility-mode', accessibilityState.value.accessibilityMode.toString())
+
+  // 屏幕阅读器提示
+  announceToScreenReader(
+    accessibilityState.value.accessibilityMode
+      ? 'Accessibility mode enabled'
+      : 'Accessibility mode disabled',
+  )
+}
+
+// 启用无障碍模式 - 添加键盘控制和阅读功能
+const enableAccessibilityMode = () => {
+  // 启用所有无障碍功能
+  accessibilityState.value.textToSpeech = true
+  accessibilityState.value.keyboardNavigation = true
+
+  // 应用CSS类
+  document.body.classList.add('large-text', 'high-contrast', 'keyboard-nav', 'focus-indicator')
+
+  // 初始化键盘导航
+  initializeKeyboardNavigation()
+
+  // 初始化文本朗读
+  initializeTextToSpeech()
+
+  // 保存设置
+  localStorage.setItem('accessibility-large-text', 'true')
+  localStorage.setItem('accessibility-high-contrast', 'true')
+  localStorage.setItem('accessibility-text-to-speech', 'true')
+  localStorage.setItem('accessibility-keyboard-navigation', 'true')
+}
+
+// 禁用无障碍模式 - 添加键盘控制和阅读功能
+const disableAccessibilityMode = () => {
+  // 禁用所有无障碍功能
+  accessibilityState.value.textToSpeech = false
+  accessibilityState.value.keyboardNavigation = false
+
+  // 移除CSS类
+  document.body.classList.remove('large-text', 'high-contrast', 'keyboard-nav', 'focus-indicator')
+
+  // 停止文本朗读
+  stopTextToSpeech()
+
+  // 禁用键盘导航
+  disableKeyboardNavigation()
+
+  // 清除设置
+  localStorage.removeItem('accessibility-large-text')
+  localStorage.removeItem('accessibility-high-contrast')
+  localStorage.removeItem('accessibility-text-to-speech')
+  localStorage.removeItem('accessibility-keyboard-navigation')
+}
+
+// 文本朗读功能
+const initializeTextToSpeech = () => {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.value = window.speechSynthesis
+    console.log('Text-to-speech initialized')
+  }
+}
+
+const startTextToSpeech = () => {
+  if (speechSynthesis.value && !isSpeaking.value) {
+    const text = document.body.innerText || document.body.textContent || ''
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 0.8
+    utterance.pitch = 1
+    utterance.volume = 0.8
+
+    utterance.onstart = () => {
+      isSpeaking.value = true
+    }
+
+    utterance.onend = () => {
+      isSpeaking.value = false
+    }
+
+    speechSynthesis.value.speak(utterance)
+  }
+}
+
+const stopTextToSpeech = () => {
+  if (speechSynthesis.value) {
+    speechSynthesis.value.cancel()
+    isSpeaking.value = false
+  }
+}
+
+// 键盘导航功能
+const initializeKeyboardNavigation = () => {
+  keyboardNavState.value.isActive = true
+  updateFocusableElements()
+
+  // 设置初始焦点
+  if (keyboardNavState.value.focusableElements.length > 0) {
+    keyboardNavState.value.currentIndex = 0
+    const firstElement = keyboardNavState.value.focusableElements[0]
+    firstElement.classList.add('keyboard-focus')
+  }
+
+  // 添加键盘事件监听器
+  document.addEventListener('keydown', handleKeyboardNavigation)
+
+  console.log(
+    'Keyboard navigation initialized with',
+    keyboardNavState.value.focusableElements.length,
+    'focusable elements',
+  )
+}
+
+const disableKeyboardNavigation = () => {
+  keyboardNavState.value.isActive = false
+  document.removeEventListener('keydown', handleKeyboardNavigation)
+
+  // 移除所有焦点指示器
+  document.querySelectorAll('.keyboard-focus').forEach((el) => {
+    el.classList.remove('keyboard-focus')
+  })
+}
+
+const updateFocusableElements = () => {
+  const focusableSelectors = [
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    'a[href]',
+    '[tabindex]:not([tabindex="-1"])',
+    '[role="button"]',
+    '[role="link"]',
+    '[role="menuitem"]',
+    '[role="tab"]',
+    '.nav-link',
+    '.dropdown-item',
+    '.btn',
+    '.form-control',
+    '.form-select',
+  ]
+
+  keyboardNavState.value.focusableElements = Array.from(
+    document.querySelectorAll(focusableSelectors.join(', ')),
+  ).filter((el) => {
+    const style = window.getComputedStyle(el)
+    const rect = el.getBoundingClientRect()
+    return (
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      rect.width > 0 &&
+      rect.height > 0 &&
+      !el.hasAttribute('disabled')
+    )
+  })
+
+  console.log('Updated focusable elements:', keyboardNavState.value.focusableElements.length)
+}
+
+const handleKeyboardNavigation = (event) => {
+  if (!keyboardNavState.value.isActive) return
+
+  const { key } = event
+  console.log('Keyboard navigation key pressed:', key)
+
+  // 方向键导航
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const currentIndex = keyboardNavState.value.currentIndex
+    const elements = keyboardNavState.value.focusableElements
+    let newIndex = currentIndex
+
+    switch (key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        newIndex = currentIndex < elements.length - 1 ? currentIndex + 1 : 0
+        break
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        newIndex = currentIndex > 0 ? currentIndex - 1 : elements.length - 1
+        break
+    }
+
+    console.log('Navigating from index', currentIndex, 'to', newIndex)
+
+    if (newIndex !== currentIndex && elements.length > 0) {
+      // 移除当前焦点指示器
+      if (currentIndex >= 0 && elements[currentIndex]) {
+        elements[currentIndex].classList.remove('keyboard-focus')
+      }
+
+      // 添加新的焦点指示器
+      keyboardNavState.value.currentIndex = newIndex
+      const targetElement = elements[newIndex]
+
+      if (targetElement) {
+        targetElement.classList.add('keyboard-focus')
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+        // 强制聚焦到元素
+        targetElement.focus()
+
+        // 朗读元素内容
+        if (accessibilityState.value.textToSpeech && speechSynthesis.value) {
+          const text =
+            targetElement.textContent ||
+            targetElement.getAttribute('aria-label') ||
+            targetElement.getAttribute('title') ||
+            targetElement.getAttribute('alt') ||
+            ''
+          if (text.trim()) {
+            speechSynthesis.value.cancel() // 停止之前的朗读
+            const utterance = new SpeechSynthesisUtterance(text.trim())
+            utterance.rate = 0.8
+            utterance.pitch = 1
+            utterance.volume = 0.8
+            speechSynthesis.value.speak(utterance)
+          }
+        }
+
+        console.log(
+          'Focused element:',
+          targetElement.tagName,
+          targetElement.textContent?.substring(0, 50),
+        )
+      }
+    }
+  }
+
+  // Enter键激活元素
+  if (key === 'Enter' && keyboardNavState.value.currentIndex >= 0) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const targetElement =
+      keyboardNavState.value.focusableElements[keyboardNavState.value.currentIndex]
+    if (targetElement) {
+      console.log('Activating element:', targetElement)
+      targetElement.click()
+    }
+  }
+
+  // Space键激活元素（用于按钮）
+  if (key === ' ' && keyboardNavState.value.currentIndex >= 0) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const targetElement =
+      keyboardNavState.value.focusableElements[keyboardNavState.value.currentIndex]
+    if (
+      targetElement &&
+      (targetElement.tagName === 'BUTTON' || targetElement.getAttribute('role') === 'button')
+    ) {
+      console.log('Activating button:', targetElement)
+      targetElement.click()
+    }
+  }
+
+  // Escape键退出键盘导航
+  if (key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
+    disableKeyboardNavigation()
+    announceToScreenReader('Keyboard navigation disabled')
+  }
+
+  // R键开始/停止朗读
+  if (key === 'r' || key === 'R') {
+    event.preventDefault()
+    event.stopPropagation()
+    if (accessibilityState.value.textToSpeech) {
+      if (isSpeaking.value) {
+        stopTextToSpeech()
+        announceToScreenReader('Reading stopped')
+      } else {
+        startTextToSpeech()
+        announceToScreenReader('Reading started')
+      }
+    }
+  }
+}
+
+// 向屏幕阅读器宣布消息
+const announceToScreenReader = (message) => {
+  const announcement = document.createElement('div')
+  announcement.setAttribute('aria-live', 'polite')
+  announcement.setAttribute('aria-atomic', 'true')
+  announcement.className = 'sr-only'
+  announcement.textContent = message
+
+  document.body.appendChild(announcement)
+
+  // 清理
+  setTimeout(() => {
+    document.body.removeChild(announcement)
+  }, 1000)
 }
 
 onMounted(() => {
@@ -37,11 +373,54 @@ onMounted(() => {
     console.log('User is authenticated')
   }
 
+  // 加载保存的无障碍设置
+  loadAccessibilitySettings()
+
   // 监听认证状态变化
   setInterval(() => {
     refreshAuthState()
   }, 1000)
 })
+
+// 加载无障碍设置 - 支持键盘控制和阅读功能
+const loadAccessibilitySettings = () => {
+  const accessibilityMode = localStorage.getItem('accessibility-mode') === 'true'
+  const textToSpeech = localStorage.getItem('accessibility-text-to-speech') === 'true'
+  const keyboardNavigation = localStorage.getItem('accessibility-keyboard-navigation') === 'true'
+  const largeText = localStorage.getItem('accessibility-large-text') === 'true'
+  const highContrast = localStorage.getItem('accessibility-high-contrast') === 'true'
+
+  if (accessibilityMode) {
+    accessibilityState.value.accessibilityMode = true
+    accessibilityState.value.textToSpeech = textToSpeech
+    accessibilityState.value.keyboardNavigation = keyboardNavigation
+    document.body.classList.add('large-text', 'high-contrast', 'keyboard-nav', 'focus-indicator')
+
+    if (textToSpeech) {
+      initializeTextToSpeech()
+    }
+    if (keyboardNavigation) {
+      initializeKeyboardNavigation()
+    }
+  } else {
+    // For backward compatibility, if individual settings were saved without main mode
+    if (largeText) {
+      document.body.classList.add('large-text')
+    }
+    if (highContrast) {
+      document.body.classList.add('high-contrast')
+    }
+    if (textToSpeech) {
+      accessibilityState.value.textToSpeech = true
+      initializeTextToSpeech()
+    }
+    if (keyboardNavigation) {
+      accessibilityState.value.keyboardNavigation = true
+      document.body.classList.add('keyboard-nav', 'focus-indicator')
+      initializeKeyboardNavigation()
+    }
+  }
+}
 
 // 这个函数现在由Auth组件直接处理
 // const handleAuthentication = (user) => {
@@ -103,6 +482,9 @@ const logout = async () => {
             <template v-if="isAuthenticated">
               <router-link class="nav-link" to="/recipes">Recipes</router-link>
               <router-link class="nav-link" to="/store-locator">Find Stores</router-link>
+              <router-link class="nav-link" to="/appointments">
+                <i class="bi bi-calendar-check me-1"></i>Book Appointment
+              </router-link>
 
               <!-- 用户信息下拉菜单 -->
               <div class="nav-item dropdown">
@@ -136,7 +518,7 @@ const logout = async () => {
                   </li>
                   <li v-if="isAdmin">
                     <router-link class="dropdown-item" to="/admin">
-                      <i class="bi bi-gear me-2"></i>Admin Panel
+                      <i class="bi bi-speedometer2 me-2"></i>Admin Dashboard
                     </router-link>
                   </li>
                   <li><hr class="dropdown-divider" /></li>
@@ -191,10 +573,33 @@ const logout = async () => {
         <div class="row">
           <div class="col-12 text-center">
             <p class="mb-2">Healthy Recipe Hub - Share & Discover Delicious Healthy Recipes</p>
-            <p class="small text-muted mb-0">
+            <p class="small text-muted mb-3">
               <i class="bi bi-check-circle me-1"></i>
               WCAG 2.1 AA Compliant | Firebase Powered | Mapbox Integration
             </p>
+
+            <!-- Accessibility Features - Main Button Only -->
+            <div class="accessibility-features text-center">
+              <!-- Main Accessibility Toggle Button -->
+              <div class="mb-3">
+                <button
+                  class="btn btn-lg btn-outline-light accessibility-main-btn"
+                  @click="toggleAccessibilityMode"
+                  :aria-pressed="accessibilityState.accessibilityMode"
+                  aria-describedby="accessibility-desc"
+                >
+                  <i class="bi bi-universal-access me-2" aria-hidden="true"></i>
+                  {{
+                    accessibilityState.accessibilityMode
+                      ? 'Exit Accessibility Mode'
+                      : 'Enter Accessibility Mode'
+                  }}
+                </button>
+                <div id="accessibility-desc" class="sr-only">
+                  Toggle accessibility mode with enhanced features
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -350,6 +755,334 @@ footer a {
 footer a:hover {
   text-decoration: underline !important;
   transform: translateX(3px);
+}
+
+/* Accessibility Features - Main Button Only */
+.accessibility-features {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Main Accessibility Button */
+.accessibility-main-btn {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  transition: all 0.3s ease;
+  min-width: 300px;
+}
+
+.accessibility-main-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.accessibility-main-btn:focus {
+  outline: 3px solid #ffc107;
+  outline-offset: 3px;
+}
+
+.accessibility-main-btn:active {
+  transform: translateY(0);
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* High Contrast Mode */
+.high-contrast {
+  filter: contrast(150%) brightness(120%);
+}
+
+.high-contrast .navbar {
+  background-color: #000 !important;
+  border-bottom: 2px solid #fff;
+}
+
+.high-contrast .btn {
+  border-width: 2px;
+  font-weight: bold;
+}
+
+.high-contrast .card {
+  border: 2px solid #000;
+  background-color: #fff;
+  color: #000;
+}
+
+.high-contrast .text-muted {
+  color: #000 !important;
+  font-weight: bold;
+}
+
+/* Large Text Mode */
+.large-text {
+  font-size: 1.2em;
+}
+
+.large-text .navbar-brand {
+  font-size: 1.5rem;
+}
+
+.large-text .nav-link {
+  font-size: 1.1rem;
+  padding: 0.75rem 1rem;
+}
+
+.large-text .btn {
+  font-size: 1.1rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.large-text .card-title {
+  font-size: 1.3rem;
+}
+
+.large-text .card-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.large-text .form-control {
+  font-size: 1.1rem;
+  padding: 0.75rem;
+}
+
+.large-text .form-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Focus indicators for accessibility */
+*:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.btn:focus,
+.nav-link:focus,
+.dropdown-item:focus {
+  outline: 3px solid #ffc107;
+  outline-offset: 2px;
+}
+
+/* Accessibility Section Styling */
+.accessibility-section {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accessibility-section h7 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status Indicators */
+.accessibility-status .badge {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+}
+
+/* Reduced motion support - System preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .ai-fab:hover {
+    transform: none;
+  }
+
+  .accessibility-btn:hover {
+    transform: none;
+  }
+}
+
+/* Reduced motion support - User preference */
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.reduced-motion .ai-fab:hover {
+  transform: none;
+}
+
+.reduced-motion .accessibility-btn:hover {
+  transform: none;
+}
+
+.reduced-motion .dropdown-item:hover {
+  padding-left: 1rem;
+}
+
+/* Enhanced focus indicators for WCAG compliance */
+*:focus-visible {
+  outline: 3px solid #007bff;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 3px solid #ffc107;
+  outline-offset: 2px;
+}
+
+/* High contrast mode enhancements */
+.high-contrast .accessibility-features {
+  border: 2px solid #fff;
+  background: #000;
+}
+
+.high-contrast .accessibility-btn {
+  border: 2px solid #fff;
+  font-weight: bold;
+}
+
+.high-contrast .accessibility-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* Large text mode enhancements */
+.large-text .accessibility-features {
+  font-size: 1.1em;
+}
+
+.large-text .accessibility-btn {
+  font-size: 1.1em;
+  padding: 0.8rem 1.2rem;
+}
+
+.large-text .accessibility-section h7 {
+  font-size: 1rem;
+}
+
+/* 简化的焦点指示器 */
+*:focus {
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px !important;
+}
+
+/* Enhanced Large Text Mode */
+.large-text {
+  font-size: 1.3em !important;
+}
+
+.large-text .navbar-brand {
+  font-size: 1.8rem !important;
+}
+
+.large-text .nav-link {
+  font-size: 1.2rem !important;
+  padding: 0.8rem 1.2rem !important;
+}
+
+.large-text .btn {
+  font-size: 1.2rem !important;
+  padding: 0.8rem 1.8rem !important;
+}
+
+.large-text .card-title {
+  font-size: 1.5rem !important;
+}
+
+.large-text .card-text {
+  font-size: 1.2rem !important;
+  line-height: 1.7 !important;
+}
+
+.large-text .form-control {
+  font-size: 1.2rem !important;
+  padding: 0.8rem !important;
+}
+
+.large-text .form-label {
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+}
+
+.large-text .accessibility-features {
+  font-size: 1.2em !important;
+}
+
+.large-text .accessibility-main-btn {
+  font-size: 1.3rem !important;
+  padding: 1.2rem 2.5rem !important;
+}
+
+.large-text .accessibility-btn {
+  font-size: 1.2em !important;
+  padding: 0.9rem 1.4rem !important;
+}
+
+/* 键盘导航样式 */
+.keyboard-nav .keyboard-focus {
+  outline: 3px solid #ffc107 !important;
+  outline-offset: 3px !important;
+  background-color: rgba(255, 193, 7, 0.1) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3) !important;
+  position: relative !important;
+}
+
+.keyboard-nav .keyboard-focus::before {
+  content: '🔍';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ffc107;
+  color: #000;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* 焦点指示器 */
+.focus-indicator *:focus {
+  outline: 3px solid #007bff !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3) !important;
+}
+
+.focus-indicator *:focus-visible {
+  outline: 3px solid #28a745 !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3) !important;
 }
 
 /* Responsive adjustments */

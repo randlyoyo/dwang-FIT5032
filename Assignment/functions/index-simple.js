@@ -115,3 +115,5 @@ exports.healthCheck = functions.https.onRequest((req, res) => {
   functions.logger.info('Health check performed')
   res.status(200).json(healthStatus)
 })
+
+

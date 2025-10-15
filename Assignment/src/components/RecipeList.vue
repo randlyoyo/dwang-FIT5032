@@ -10,20 +10,23 @@
 
           <!-- Search and Filter Controls -->
           <div v-if="!loading" class="search-filter-section mb-4">
-            <div class="row g-3 align-items-end">
-              <!-- Search Box -->
-              <div class="col-md-4">
+            <!-- First Row: Search -->
+            <div class="row g-3 mb-3">
+              <div class="col-12">
                 <label class="form-label fw-bold">
                   <i class="bi bi-search me-2"></i>Search Recipes
                 </label>
                 <input
                   type="text"
-                  class="form-control"
+                  class="form-control form-control-lg"
                   placeholder="Search by name, author, or tags..."
                   v-model="searchQuery"
                 />
               </div>
+            </div>
 
+            <!-- Second Row: Filters and Actions -->
+            <div class="row g-3 align-items-end">
               <!-- Category Filter -->
               <div class="col-md-3">
                 <label class="form-label fw-bold">
@@ -45,8 +48,10 @@
               </div>
 
               <!-- Difficulty Filter -->
-              <div class="col-md-2">
-                <label class="form-label fw-bold">Difficulty</label>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-star me-2"></i>Difficulty
+                </label>
                 <select class="form-select" v-model="difficultyFilter">
                   <option value="">All Levels</option>
                   <option value="Easy">Easy</option>
@@ -55,16 +60,11 @@
                 </select>
               </div>
 
-              <!-- Export Button -->
-              <div class="col-md-1">
-                <button class="btn btn-success w-100" @click="exportRecipes" title="Export Recipes">
-                  <i class="bi bi-download"></i>
-                </button>
-              </div>
-
               <!-- Sort By -->
-              <div class="col-md-2">
-                <label class="form-label fw-bold">Sort By</label>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">
+                  <i class="bi bi-sort-alpha-down me-2"></i>Sort By
+                </label>
                 <select class="form-select" v-model="sortBy" @change="applySorting">
                   <option value="name">Name</option>
                   <option value="rating">Rating</option>
@@ -74,15 +74,53 @@
                 </select>
               </div>
 
-              <!-- Sort Order -->
-              <div class="col-md-1">
-                <button
-                  class="btn btn-outline-success w-100"
-                  @click="toggleSortOrder"
-                  :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'"
-                >
-                  <i :class="sortOrder === 'asc' ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
-                </button>
+              <!-- Sort Order & Export -->
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Actions</label>
+                <div class="d-flex gap-2">
+                  <button
+                    class="btn btn-outline-success flex-fill"
+                    @click="toggleSortOrder"
+                    :title="sortOrder === 'asc' ? 'Sort Ascending' : 'Sort Descending'"
+                  >
+                    <i :class="sortOrder === 'asc' ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
+                    {{ sortOrder === 'asc' ? 'Asc' : 'Desc' }}
+                  </button>
+                  <div class="btn-group flex-fill" role="group">
+                    <button
+                      class="btn btn-success"
+                      @click="showExportOptions"
+                      title="Export Recipes"
+                    >
+                      <i class="bi bi-download me-1"></i>Export
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-success dropdown-toggle dropdown-toggle-split"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    >
+                      <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <button class="dropdown-item" @click="exportRecipes('csv')">
+                          <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export as CSV
+                        </button>
+                      </li>
+                      <li>
+                        <button class="dropdown-item" @click="exportRecipes('json')">
+                          <i class="bi bi-file-earmark-code me-2"></i>Export as JSON
+                        </button>
+                      </li>
+                      <li>
+                        <button class="dropdown-item" @click="exportRecipes('pdf')">
+                          <i class="bi bi-file-earmark-pdf me-2"></i>Export as PDF
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -120,7 +158,11 @@
           <!-- Recipes Grid -->
           <div v-else class="row">
             <div v-for="recipe in paginatedRecipes" :key="recipe.id" class="col-lg-4 col-md-6 mb-4">
-              <div class="card recipe-card h-100">
+              <div
+                :id="`recipe-${recipe.id}`"
+                class="card recipe-card h-100"
+                :class="{ 'highlighted-recipe': highlightedRecipeId === recipe.id }"
+              >
                 <div class="card-header bg-success text-white">
                   <h5 class="mb-0">{{ recipe.name }}</h5>
                   <small>by {{ recipe.chef }}</small>
@@ -147,11 +189,11 @@
                       </div>
                       <div class="col-4">
                         <small class="text-muted">Calories</small>
-                        <div class="fw-bold">{{ recipe.nutritionInfo.calories }}</div>
+                        <div class="fw-bold">{{ recipe.calories || 'N/A' }}</div>
                       </div>
                       <div class="col-4">
                         <small class="text-muted">Protein</small>
-                        <div class="fw-bold">{{ recipe.nutritionInfo.protein }}</div>
+                        <div class="fw-bold">{{ recipe.protein || 'N/A' }}</div>
                       </div>
                     </div>
                   </div>
@@ -245,16 +287,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import RecipeRating from './RecipeRating.vue'
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore'
 import { app } from '../config/firebase.js'
+import * as cloudFunctions from '../services/cloudFunctions.js'
 
+const route = useRoute()
 const db = getFirestore(app)
 const recipes = ref([])
 const showRating = ref({})
 const loading = ref(true)
 const error = ref(null)
+const highlightedRecipeId = ref(null)
 
 // Search and Filter
 const searchQuery = ref('')
@@ -269,40 +315,119 @@ const itemsPerPage = ref(12)
 
 onMounted(async () => {
   await fetchRecipes()
+
+  // Check if there's a recipe ID in the query params
+  if (route.query.id) {
+    highlightedRecipeId.value = route.query.id
+
+    // Find the recipe and navigate to its page
+    const recipeIndex = recipes.value.findIndex((r) => r.id === route.query.id)
+    if (recipeIndex !== -1) {
+      // Calculate which page the recipe is on
+      const targetPage = Math.ceil((recipeIndex + 1) / itemsPerPage.value)
+      currentPage.value = targetPage
+
+      // Wait for DOM to update, then scroll to the highlighted recipe
+      await nextTick()
+      setTimeout(() => {
+        const element = document.getElementById(`recipe-${route.query.id}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 500)
+
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        highlightedRecipeId.value = null
+      }, 3000)
+    }
+  }
 })
+
+// 根据卡路里计算默认蛋白质值
+const getDefaultProtein = (calories) => {
+  if (!calories || calories === 0) return '8g'
+  // 一般每100卡路里约含4-6g蛋白质
+  const protein = Math.round((calories / 100) * 5)
+  return `${protein}g`
+}
+
+// Cloud Functions集成：获取食谱分析数据
+const recipeAnalytics = ref({})
+const loadingAnalytics = ref(false)
+
+const getRecipeAnalytics = async (recipeId) => {
+  try {
+    loadingAnalytics.value = true
+    const result = await cloudFunctions.getRecipeAnalytics(recipeId)
+    recipeAnalytics.value[recipeId] = result.analytics
+    return result.analytics
+  } catch (error) {
+    console.error('Error getting recipe analytics:', error)
+    return null
+  } finally {
+    loadingAnalytics.value = false
+  }
+}
+
+// Cloud Functions集成：获取个性化推荐
+const getPersonalizedRecommendations = async () => {
+  try {
+    const result = await cloudFunctions.getRecipeRecommendations({
+      preferences: 'healthy, quick, vegetarian',
+    })
+    return result.recommendations || []
+  } catch (error) {
+    console.error('Error getting recommendations:', error)
+    return []
+  }
+}
 
 const fetchRecipes = async () => {
   try {
     loading.value = true
     error.value = null
 
-    // Fetch ALL published recipes from Firestore (no limit)
-    const q = query(collection(db, 'recipes'), where('isPublished', '==', true))
-
+    // Fetch ALL recipes from Firestore (no limit)
+    // 先尝试获取所有食谱，不限制isPublished字段
+    const q = query(collection(db, 'recipes'))
     const querySnapshot = await getDocs(q)
+
+    console.log(`Found ${querySnapshot.docs.length} recipes in Firestore`)
 
     recipes.value = querySnapshot.docs.map((doc) => {
       const data = doc.data()
+      console.log('Raw Firestore data for recipe:', doc.id, data) // 调试：查看原始数据
       return {
         id: doc.id,
-        name: data.title || 'Untitled Recipe',
-        chef: data.authorName || 'Unknown Chef',
-        cuisine: data.category || 'General',
+        name: data.title || data.name || 'Untitled Recipe',
+        chef: data.authorName || data.chef || 'Unknown Chef',
+        category: data.category || 'General',
+        cuisine: data.cuisine || 'General',
         difficulty: data.difficulty || 'Medium',
         prepTime: data.prepTime || 0,
         cookTime: data.cookTime || 0,
         servings: data.servings || 1,
         description: data.description || 'No description available',
         tags: data.tags || [],
-        rating: data.rating || 0,
-        nutritionInfo: {
-          calories: data.calories || 0,
-          protein: data.protein ? `${data.protein}g` : 'N/A',
+        rating: data.rating || null, // 保持null而不是0，因为不是所有食谱都有评分
+        views: data.views || 0,
+        likes: data.likes || 0,
+        calories: data.calories || null, // 保持null而不是0，因为不是所有食谱都有卡路里
+        protein: data.protein || null,
+        ingredients: data.ingredients || [],
+        instructions: data.instructions || [],
+        createdAt: data.createdAt || null,
+        updatedAt: data.updatedAt || null,
+        nutrition: {
+          calories: data.calories || null,
+          protein: data.protein || null,
         },
       }
     })
 
     console.log(`✅ Loaded ${recipes.value.length} recipes from Firestore`)
+    console.log('Sample recipe data:', recipes.value[0]) // 调试：查看第一个食谱的数据结构
   } catch (err) {
     console.error('Error fetching recipes from Firestore:', err)
     error.value = 'Failed to load recipes. Please try again later.'
@@ -331,7 +456,7 @@ const filteredRecipes = computed(() => {
 
   // Apply category filter
   if (categoryFilter.value) {
-    result = result.filter((recipe) => recipe.cuisine === categoryFilter.value)
+    result = result.filter((recipe) => recipe.category === categoryFilter.value)
   }
 
   // Apply difficulty filter
@@ -421,38 +546,233 @@ const clearFilters = () => {
 }
 
 // Export recipes data
-const exportRecipes = () => {
-  const exportData = filteredRecipes.value.map((recipe) => ({
-    Name: recipe.name,
-    Category: recipe.category,
-    Difficulty: recipe.difficulty,
-    'Prep Time': recipe.prepTime,
-    Calories: recipe.calories,
-    Rating: recipe.rating,
-    Tags: recipe.tags.join('; '),
-    Ingredients: recipe.ingredients.join('; '),
-    Instructions: recipe.instructions.join(' | '),
-  }))
+// Show export options modal
+const showExportOptions = () => {
+  if (!filteredRecipes.value || filteredRecipes.value.length === 0) {
+    alert('No recipes to export. Please add some recipes first.')
+    return
+  }
 
-  // Convert to CSV
-  const headers = Object.keys(exportData[0])
+  // For now, default to CSV (backward compatibility)
+  exportRecipes('csv')
+}
+
+// Export recipes data with format selection
+const exportRecipes = (format = 'csv') => {
+  try {
+    // Check if there are recipes to export
+    if (!filteredRecipes.value || filteredRecipes.value.length === 0) {
+      alert('No recipes to export. Please add some recipes first.')
+      return
+    }
+
+    console.log(
+      `Starting ${format.toUpperCase()} export with`,
+      filteredRecipes.value.length,
+      'recipes',
+    )
+
+    const exportData = filteredRecipes.value.map((recipe) => {
+      // 安全处理时间戳
+      const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'N/A'
+        try {
+          if (timestamp.seconds) {
+            return new Date(timestamp.seconds * 1000).toISOString()
+          } else if (timestamp.toDate) {
+            return timestamp.toDate().toISOString()
+          } else if (timestamp instanceof Date) {
+            return timestamp.toISOString()
+          } else {
+            return new Date(timestamp).toISOString()
+          }
+        } catch (e) {
+          console.warn('Error formatting timestamp:', e)
+          return 'N/A'
+        }
+      }
+
+      return {
+        ID: recipe.id || 'N/A',
+        Name: recipe.name || 'N/A',
+        Chef: recipe.chef || 'N/A',
+        Category: recipe.category || 'N/A',
+        Cuisine: recipe.cuisine || 'N/A',
+        Difficulty: recipe.difficulty || 'N/A',
+        'Prep Time': recipe.prepTime || 'N/A',
+        'Cook Time': recipe.cookTime || 'N/A',
+        Servings: recipe.servings || 'N/A',
+        Calories:
+          recipe.calories !== null && recipe.calories !== undefined ? recipe.calories : 'N/A',
+        Protein: recipe.protein !== null && recipe.protein !== undefined ? recipe.protein : 'N/A',
+        Rating: recipe.rating !== null && recipe.rating !== undefined ? recipe.rating : 'N/A',
+        Views: recipe.views || 0,
+        Likes: recipe.likes || 0,
+        Description: recipe.description || 'N/A',
+        Tags: (recipe.tags && Array.isArray(recipe.tags) ? recipe.tags : []).join('; '),
+        Ingredients: (recipe.ingredients && Array.isArray(recipe.ingredients)
+          ? recipe.ingredients
+          : []
+        ).join('; '),
+        Instructions: (recipe.instructions && Array.isArray(recipe.instructions)
+          ? recipe.instructions
+          : []
+        ).join(' | '),
+        'Created At': formatTimestamp(recipe.createdAt),
+        'Updated At': formatTimestamp(recipe.updatedAt),
+      }
+    })
+
+    console.log('Export data prepared:', exportData.length, 'records')
+
+    if (exportData.length === 0) {
+      alert('No data to export.')
+      return
+    }
+
+    // Export based on format
+    switch (format.toLowerCase()) {
+      case 'csv':
+        exportAsCSV(exportData)
+        break
+      case 'json':
+        exportAsJSON(exportData)
+        break
+      case 'pdf':
+        exportAsPDF(exportData)
+        break
+      default:
+        alert('Unsupported export format: ' + format)
+        return
+    }
+
+    console.log(`${format.toUpperCase()} export completed successfully`)
+    alert(`Successfully exported ${exportData.length} recipes as ${format.toUpperCase()}!`)
+  } catch (error) {
+    console.error('Export failed:', error)
+    alert('Export failed: ' + error.message)
+  }
+}
+
+// Export as CSV
+const exportAsCSV = (data) => {
+  const headers = Object.keys(data[0])
+  console.log('CSV headers:', headers)
+
   const csvContent = [
     headers.join(','),
-    ...exportData.map((row) =>
-      headers.map((header) => `"${String(row[header]).replace(/"/g, '""')}"`).join(','),
+    ...data.map((row) =>
+      headers
+        .map((header) => {
+          const value = row[header] || ''
+          const stringValue = String(value)
+          // 处理换行符和特殊字符
+          const escapedValue = stringValue
+            .replace(/"/g, '""')
+            .replace(/\n/g, ' ')
+            .replace(/\r/g, ' ')
+          return `"${escapedValue}"`
+        })
+        .join(','),
     ),
   ].join('\n')
 
-  // Download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const BOM = '\uFEFF'
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
   link.setAttribute('href', url)
-  link.setAttribute('download', `recipes_${new Date().toISOString().split('T')[0]}.csv`)
+  link.setAttribute('download', `recipes_export_${new Date().toISOString().split('T')[0]}.csv`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// Export as JSON
+const exportAsJSON = (data) => {
+  const jsonContent = JSON.stringify(
+    {
+      exportDate: new Date().toISOString(),
+      totalRecords: data.length,
+      data: data,
+    },
+    null,
+    2,
+  )
+
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.setAttribute('href', url)
+  link.setAttribute('download', `recipes_export_${new Date().toISOString().split('T')[0]}.json`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// Export as PDF
+const exportAsPDF = (data) => {
+  // Create a simple HTML table for PDF generation
+  const headers = Object.keys(data[0])
+
+  let htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Recipes Export</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #28a745; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #28a745; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .export-info { margin-bottom: 20px; text-align: center; color: #666; }
+      </style>
+    </head>
+    <body>
+      <h1>Healthy Recipe Hub - Recipes Export</h1>
+      <div class="export-info">
+        <p>Export Date: ${new Date().toLocaleDateString()}</p>
+        <p>Total Recipes: ${data.length}</p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            ${headers.map((header) => `<th>${header}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${data
+            .map(
+              (row) => `
+            <tr>
+              ${headers.map((header) => `<td>${row[header] || ''}</td>`).join('')}
+            </tr>
+          `,
+            )
+            .join('')}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `
+
+  // Create a new window and print
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(htmlContent)
+  printWindow.document.close()
+
+  // Wait for content to load, then trigger print
+  printWindow.onload = () => {
+    printWindow.print()
+    printWindow.close()
+  }
 }
 
 const viewRecipe = (recipe) => {
@@ -568,6 +888,25 @@ const getDifficultyClass = (difficulty) => {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Highlighted Recipe Animation */
+.highlighted-recipe {
+  animation: highlight-pulse 1.5s ease-in-out 2;
+  box-shadow: 0 0 20px rgba(40, 167, 69, 0.6) !important;
+  border: 2px solid #28a745 !important;
+}
+
+@keyframes highlight-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(40, 167, 69, 0.8);
+    transform: scale(1.02);
+  }
 }
 
 .recipe-stats {

@@ -8,11 +8,11 @@ import AdminPanel from '../components/AdminPanel.vue'
 import Profile from '../components/Profile.vue'
 import EmailTest from '../components/EmailTest.vue'
 import UserManagement from '../components/UserManagement.vue'
-import CloudFunctionsDemo from '../components/CloudFunctionsDemo.vue'
 import HealthyStoreMap from '../components/HealthyStoreMap.vue'
 import MapboxStoreLocator from '../components/MapboxStoreLocator.vue'
 import AccessibilityDemo from '../components/AccessibilityDemo.vue'
 import GeminiAI from '../components/GeminiAI.vue'
+import AppointmentBooking from '../components/AppointmentBooking.vue'
 
 // 创建路由实例
 const router = createRouter({
@@ -54,7 +54,7 @@ const router = createRouter({
       name: 'Admin',
       component: AdminPanel,
       meta: {
-        title: 'Admin Panel',
+        title: 'Admin Dashboard',
         requiresAuth: true,
         allowedRoles: ['admin'],
         requiresAdmin: true,
@@ -88,16 +88,6 @@ const router = createRouter({
         title: 'User Management',
         requiresAuth: true,
         allowedRoles: ['admin'],
-      },
-    },
-    {
-      path: '/cloud-functions',
-      name: 'CloudFunctions',
-      component: CloudFunctionsDemo,
-      meta: {
-        title: 'Cloud Functions Demo',
-        requiresAuth: false,
-        allowedRoles: ['guest', 'user', 'admin'],
       },
     },
     {
@@ -138,6 +128,16 @@ const router = createRouter({
         title: 'AI Recipe Assistant',
         requiresAuth: false,
         allowedRoles: ['guest', 'user', 'admin'],
+      },
+    },
+    {
+      path: '/appointments',
+      name: 'AppointmentBooking',
+      component: AppointmentBooking,
+      meta: {
+        title: 'Book Appointment',
+        requiresAuth: true,
+        allowedRoles: ['user', 'admin'],
       },
     },
   ],
