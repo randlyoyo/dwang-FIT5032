@@ -43,7 +43,7 @@
                   />
                   <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
 
-                  <!-- 密码验证规则显示 -->
+                  <!-- Password validation rules display -->
                   <div v-if="!isLogin && formData.password" class="password-requirements mt-2">
                     <div class="requirements-title">Password Requirements:</div>
                     <div
@@ -151,7 +151,7 @@
                   <div v-if="errors.fullName" class="invalid-feedback">{{ errors.fullName }}</div>
                 </div>
 
-                <!-- 认证消息显示 -->
+                <!-- Authentication message display -->
                 <div
                   v-if="authMessage"
                   class="alert"
@@ -702,7 +702,7 @@ onMounted(() => {
     }
   })
 
-  // 初始化Firebase UI（可选）
+  // 初始化Firebase UI
   nextTick(() => {
     // 尝试初始化Firebase UI，但不依赖它
     try {

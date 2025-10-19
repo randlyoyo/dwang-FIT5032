@@ -207,12 +207,12 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css'
 
-// Mapbox配置 - 直接使用 token（临时测试）
+// Mapbox configuration - directly use token (temporary test)
 const MAPBOX_TOKEN =
   import.meta.env.VITE_MAPBOX_TOKEN ||
   'pk.eyJ1IjoiMTIzMzIxMjB4IiwiYSI6ImNtZ2tldjBrbTBsNDgyam9rMWdpZzQwbzcifQ.FAPetllCkZacwvrffUsdfA'
 
-// 调试信息
+// Debug information
 console.log('🔍 Mapbox Debug Info:')
 console.log('  - Env Token exists:', import.meta.env.VITE_MAPBOX_TOKEN ? '✅ YES' : '❌ NO')
 console.log('  - Using Token length:', MAPBOX_TOKEN ? MAPBOX_TOKEN.length : 0)
@@ -225,7 +225,7 @@ console.log(
   Object.keys(import.meta.env).filter((k) => k.startsWith('VITE_')),
 )
 
-// 状态
+// State
 const mapContainer = ref(null)
 const map = ref(null)
 const loading = ref(true)
@@ -235,19 +235,19 @@ const directions = ref(null)
 const userLocation = ref(null)
 const travelMode = ref('driving')
 
-// 搜索相关状态
+// Search related state
 const searchOrigin = ref('')
 const searchDestination = ref('')
 const searchResults = ref([])
-const searchResultsRef = ref(null) // 搜索结果容器引用
+const searchResultsRef = ref(null) // Search results container reference
 const searchType = ref('') // 'origin' or 'destination'
 const selectedOrigin = ref(null)
 const selectedDestination = ref(null)
 const isSearching = ref(false)
 const showNoResults = ref(false)
-let searchTimeout = null // 防抖定时器
+let searchTimeout = null // Debounce timer
 
-// 墨尔本的健康食品店数据
+// Melbourne healthy food store data
 const stores = ref([
   {
     id: 1,
@@ -307,10 +307,10 @@ const stores = ref([
 
 const filteredStores = computed(() => stores.value)
 
-// 点击外部关闭搜索结果
+// Click outside to close search results
 const handleClickOutside = (event) => {
   if (searchResultsRef.value && !searchResultsRef.value.contains(event.target)) {
-    // 检查点击的不是输入框
+    // Check that click is not on input box
     const isInputClick =
       event.target.closest('input[type="text"]') ||
       event.target.closest('.search-results-container')
@@ -321,7 +321,7 @@ const handleClickOutside = (event) => {
   }
 }
 
-// 初始化地图
+// Initialize map
 onMounted(async () => {
   try {
     console.log('🗺️ Initializing Mapbox with token length:', MAPBOX_TOKEN.length)
@@ -332,10 +332,10 @@ onMounted(async () => {
       return
     }
 
-    // 设置 Mapbox token
+    // Set Mapbox token
     mapboxgl.accessToken = MAPBOX_TOKEN
 
-    // 创建地图
+    // Create map
     map.value = new mapboxgl.Map({
       container: mapContainer.value,
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -343,35 +343,35 @@ onMounted(async () => {
       zoom: 12,
     })
 
-    // 等待地图加载
+    // Wait for map to load
     map.value.on('load', () => {
       console.log('Mapbox map loaded successfully')
       addStoreMarkers()
       loading.value = false
     })
 
-    // 添加导航控件
+    // Add navigation control
     map.value.addControl(new mapboxgl.NavigationControl())
 
-    // 初始化 Directions 控件
+    // Initialize Directions control
     directions.value = new MapboxDirections({
       accessToken: MAPBOX_TOKEN,
       unit: 'metric',
       profile: 'mapbox/driving',
       controls: {
-        inputs: false, // 隐藏默认输入框
+        inputs: false, // Hide default input box
         instructions: true,
-        profileSwitcher: true, // 显示出行方式切换
+        profileSwitcher: true, // Show travel mode switcher
       },
     })
 
-    // 获取用户位置
+    // Get user location
     getUserLocation()
 
-    // 添加点击外部关闭搜索结果的监听
+    // Add click outside listener to close search results
     document.addEventListener('click', handleClickOutside)
 
-    // 错误处理
+    // Error handling
     map.value.on('error', (e) => {
       console.error('Map error:', e)
       error.value = 'Failed to load map. Please check your Mapbox token.'
@@ -384,28 +384,28 @@ onMounted(async () => {
   }
 })
 
-// 组件卸载时清理
+// Cleanup on component unmount
 onUnmounted(() => {
-  // 移除点击外部监听
+  // Remove click outside listener
   document.removeEventListener('click', handleClickOutside)
 
-  // 清除定时器
+  // Clear timer
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 })
 
-// 添加商店标记
+// Add store markers
 const addStoreMarkers = () => {
   stores.value.forEach((store) => {
-    // 创建标记元素
+    // Create marker element
     const el = document.createElement('div')
     el.className = 'custom-marker'
     el.innerHTML = '📍'
     el.style.fontSize = '24px'
     el.style.cursor = 'pointer'
 
-    // 创建弹出窗口
+    // Create popup window
     const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
       <div style="padding: 10px;">
         <h6 style="margin: 0 0 5px 0;">${store.name}</h6>
@@ -417,7 +417,7 @@ const addStoreMarkers = () => {
       </div>
     `)
 
-    // 创建标记
+    // Create marker
     const marker = new mapboxgl.Marker(el)
       .setLngLat([store.lng, store.lat])
       .setPopup(popup)
@@ -427,7 +427,7 @@ const addStoreMarkers = () => {
   })
 }
 
-// 获取用户位置
+// Get user location
 const getUserLocation = () => {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -438,7 +438,7 @@ const getUserLocation = () => {
         }
         console.log('✅ User location obtained:', userLocation.value)
 
-        // 添加用户位置标记
+        // Add user location marker
         new mapboxgl.Marker({ color: '#0080ff' })
           .setLngLat([userLocation.value.lng, userLocation.value.lat])
           .setPopup(
@@ -458,7 +458,7 @@ const getUserLocation = () => {
   }
 }
 
-// 飞到指定商店
+// Fly to specified store
 const flyToStore = (store) => {
   if (!map.value) return
 
@@ -468,7 +468,7 @@ const flyToStore = (store) => {
     essential: true,
   })
 
-  // 显示该商店的弹出窗口
+  // Show popup window for this store
   const marker = markers.value.find((m) => {
     const lngLat = m.getLngLat()
     return lngLat.lng === store.lng && lngLat.lat === store.lat
@@ -479,7 +479,7 @@ const flyToStore = (store) => {
   }
 }
 
-// 获取路线导航
+// Get route navigation
 const getDirections = (store) => {
   if (!map.value || !directions.value) {
     alert('Map not ready yet. Please wait a moment.')
@@ -490,26 +490,26 @@ const getDirections = (store) => {
     alert(
       '📍 Please allow location access to get directions.\n\nYour browser will ask for permission to access your location.',
     )
-    // 尝试再次获取用户位置
+    // Try to get user location again
     getUserLocation()
     return
   }
 
-  // 清除之前的路线
+  // Clear previous route
   if (map.value.getLayer('mapbox-gl-directions')) {
     directions.value.removeRoutes()
   }
 
-  // 添加 Directions 控件到地图（如果还没添加）
+  // Add Directions control to map (if not already added)
   if (!map.value.hasControl(directions.value)) {
     map.value.addControl(directions.value, 'top-left')
   }
 
-  // 设置起点和终点
+  // Set origin and destination
   directions.value.setOrigin([userLocation.value.lng, userLocation.value.lat])
   directions.value.setDestination([store.lng, store.lat])
 
-  // 飞到路线视图
+  // Fly to route view
   map.value.flyTo({
     center: [store.lng, store.lat],
     zoom: 13,
@@ -519,62 +519,62 @@ const getDirections = (store) => {
   console.log(`🗺️ Getting directions to: ${store.name}`)
 }
 
-// 处理起点输入（实时搜索，带防抖）
+// Handle origin input (real-time search with debounce)
 const handleOriginInput = () => {
-  // 清除之前的定时器
+  // Clear previous timer
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
-  // 重置已选择的起点
+  // Reset selected origin
   if (selectedOrigin.value && searchOrigin.value !== 'My Location') {
     selectedOrigin.value = null
   }
 
-  // 如果输入为空或太短，清除结果
+  // Clear results if input is empty or too short
   if (!searchOrigin.value || searchOrigin.value.length < 3) {
     searchResults.value = []
     showNoResults.value = false
     return
   }
 
-  // 设置新的定时器，500ms 后执行搜索
+  // Set new timer to execute search after 500ms
   searchTimeout = setTimeout(() => {
     searchType.value = 'origin'
     searchLocation('origin')
   }, 500)
 }
 
-// 处理终点输入（实时搜索，带防抖）
+// Handle destination input (real-time search with debounce)
 const handleDestinationInput = () => {
-  // 清除之前的定时器
+  // Clear previous timer
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
-  // 重置已选择的终点
+  // Reset selected destination
   if (selectedDestination.value) {
     selectedDestination.value = null
   }
 
-  // 如果输入为空或太短，清除结果
+  // Clear results if input is empty or too short
   if (!searchDestination.value || searchDestination.value.length < 3) {
     searchResults.value = []
     showNoResults.value = false
     return
   }
 
-  // 设置新的定时器，500ms 后执行搜索
+  // Set new timer to execute search after 500ms
   searchTimeout = setTimeout(() => {
     searchType.value = 'destination'
     searchLocation('destination')
   }, 500)
 }
 
-// 处理起点输入框获得焦点
+// Handle origin input box focus
 const handleOriginFocus = () => {
   searchType.value = 'origin'
-  // 如果已有输入且长度足够，重新显示搜索结果
+  // Redisplay search results if input exists and is long enough
   if (
     searchOrigin.value &&
     searchOrigin.value.length >= 3 &&
@@ -584,16 +584,16 @@ const handleOriginFocus = () => {
   }
 }
 
-// 处理终点输入框获得焦点
+// Handle destination input box focus
 const handleDestinationFocus = () => {
   searchType.value = 'destination'
-  // 如果已有输入且长度足够，重新显示搜索结果
+  // Redisplay search results if input exists and is long enough
   if (searchDestination.value && searchDestination.value.length >= 3) {
     searchLocation('destination')
   }
 }
 
-// 使用我的位置作为起点
+// Use my location as origin
 const useMyLocation = () => {
   if (userLocation.value) {
     selectedOrigin.value = [userLocation.value.lng, userLocation.value.lat]
@@ -613,7 +613,7 @@ const useMyLocation = () => {
   }
 }
 
-// 搜索地点（使用 Mapbox Geocoding API）
+// Search location (using Mapbox Geocoding API)
 const searchLocation = async (type) => {
   searchType.value = type
   const query = type === 'origin' ? searchOrigin.value : searchDestination.value
@@ -656,7 +656,7 @@ const searchLocation = async (type) => {
   }
 }
 
-// 选择搜索结果
+// Select search result
 const selectSearchResult = (result) => {
   const [lng, lat] = result.center
 
@@ -668,12 +668,12 @@ const selectSearchResult = (result) => {
     searchDestination.value = result.place_name
   }
 
-  // 清空搜索结果和状态
+  // Clear search results and status
   searchResults.value = []
   showNoResults.value = false
   isSearching.value = false
 
-  // 飞到选中的位置
+  // Fly to selected location
   map.value.flyTo({
     center: [lng, lat],
     zoom: 14,
@@ -683,21 +683,21 @@ const selectSearchResult = (result) => {
   console.log(`📍 Selected: ${result.place_name}`)
 }
 
-// 搜索并导航
+// Search and navigate
 const searchAndNavigate = async () => {
-  // 如果起点为空，尝试使用用户位置
+  // If origin is empty, try using user location
   if (!searchOrigin.value && !selectedOrigin.value) {
     useMyLocation()
     await new Promise((resolve) => setTimeout(resolve, 1000))
   }
 
-  // 如果终点为空，提示用户
+  // If destination is empty, prompt user
   if (!searchDestination.value && !selectedDestination.value) {
     alert('Please enter a destination')
     return
   }
 
-  // 如果起点或终点还没选择，先搜索
+  // If origin or destination hasn't been selected, search first
   if (!selectedOrigin.value && searchOrigin.value && searchOrigin.value !== 'My Location') {
     await searchLocation('origin')
     if (searchResults.value.length > 0) {
@@ -715,7 +715,7 @@ const searchAndNavigate = async () => {
     }
   }
 
-  // 开始导航
+  // Start navigation
   if (selectedOrigin.value && selectedDestination.value) {
     try {
       if (directions.value && map.value.hasControl(directions.value)) {
@@ -746,7 +746,7 @@ const searchAndNavigate = async () => {
   }
 }
 
-// 切换出行方式
+// Switch travel mode
 const changeTravelMode = (mode) => {
   travelMode.value = mode
 
@@ -778,7 +778,7 @@ const changeTravelMode = (mode) => {
   }
 }
 
-// 清除搜索
+// Clear search
 const clearSearch = () => {
   searchOrigin.value = ''
   searchDestination.value = ''
@@ -799,7 +799,7 @@ const clearSearch = () => {
   console.log('🧹 Search cleared')
 }
 
-// 获取地点图标
+// Get place icon
 const getPlaceIcon = (placeTypes) => {
   if (!placeTypes || placeTypes.length === 0) return 'bi bi-geo-alt-fill text-primary'
 
@@ -818,18 +818,18 @@ const getPlaceIcon = (placeTypes) => {
   return iconMap[type] || 'bi bi-geo-alt-fill text-primary'
 }
 
-// 获取地点名称（主要标题）
+// Get place name (main title)
 const getPlaceName = (result) => {
   return result.text || result.place_name.split(',')[0]
 }
 
-// 获取地点地址（详细信息）
+// Get place address (detailed information)
 const getPlaceAddress = (result) => {
   const parts = result.place_name.split(',')
   return parts.length > 1 ? parts.slice(1).join(',').trim() : result.place_name
 }
 
-// 获取地点类型（中文显示）
+// Get place type (display in English)
 const getPlaceType = (result) => {
   if (!result.place_type || result.place_type.length === 0) return 'Location'
 
@@ -848,7 +848,7 @@ const getPlaceType = (result) => {
   return typeMap[type] || 'Location'
 }
 
-// 格式化距离
+// Format distance
 const formatDistance = (distance) => {
   if (distance < 1000) {
     return `${Math.round(distance)}m away`

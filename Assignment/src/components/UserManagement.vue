@@ -329,7 +329,15 @@ const changePage = (page) => {
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
 }
 
 const addUser = () => {
@@ -350,7 +358,7 @@ const submitAddUser = async () => {
   try {
     isSubmitting.value = true
 
-    // 使用Firebase Auth创建用户
+    // Use Firebase Auth to create user
     const registrationDate = new Date().toISOString()
     const result = await firebaseAuthService.signUp(
       newUser.value.email,
@@ -422,7 +430,7 @@ const exportUsers = (format = 'csv') => {
     )
 
     const exportData = filteredUsers.value.map((user) => {
-      // 安全处理时间戳
+      // Safely handle timestamp
       const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'N/A'
         try {
@@ -499,7 +507,7 @@ const exportUsersAsCSV = (data) => {
         .map((header) => {
           const value = row[header] || ''
           const stringValue = String(value)
-          // 处理换行符和特殊字符
+          // Handle line breaks and special characters
           const escapedValue = stringValue
             .replace(/"/g, '""')
             .replace(/\n/g, ' ')
@@ -608,7 +616,7 @@ const exportUsersAsPDF = (data) => {
   }
 }
 
-// Cloud Functions集成：获取用户统计信息
+// Cloud Functions integration: Get user statistics
 const userStats = ref(null)
 const loadingStats = ref(false)
 

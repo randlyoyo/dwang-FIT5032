@@ -1,6 +1,6 @@
 <template>
   <div class="ai-assistant-page">
-    <!-- Hero Section - 与主页风格统一 -->
+    <!-- Hero Section - unified with home page style -->
     <section class="hero-section text-white text-center">
       <div class="hero-overlay">
         <div class="container">
@@ -541,7 +541,7 @@ const getCookingTips = async () => {
 </script>
 
 <style scoped>
-/* Hero Section - 与主页统一 */
+/* Hero Section - unified with home page */
 .hero-section {
   background:
     linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
@@ -636,7 +636,7 @@ const getCookingTips = async () => {
   font-weight: 600;
 }
 
-/* Recipe Cards - 与主页统一 */
+/* Recipe Cards  */
 .recipe-card {
   transition: all 0.3s ease;
   border-radius: 8px;
@@ -668,7 +668,7 @@ const getCookingTips = async () => {
   background-color: #f8f9fa;
 }
 
-/* Buttons - 与主页统一 */
+/* Buttons */
 .btn-success {
   border-radius: 50px;
   transition: all 0.3s ease;

@@ -6,13 +6,12 @@ import Auth from '../components/Auth.vue'
 import RecipeList from '../components/RecipeList.vue'
 import AdminPanel from '../components/AdminPanel.vue'
 import Profile from '../components/Profile.vue'
-import EmailTest from '../components/EmailTest.vue'
+import EmailCenter from '../components/EmailCenter.vue'
 import UserManagement from '../components/UserManagement.vue'
 import HealthyStoreMap from '../components/HealthyStoreMap.vue'
 import MapboxStoreLocator from '../components/MapboxStoreLocator.vue'
 import AccessibilityDemo from '../components/AccessibilityDemo.vue'
 import GeminiAI from '../components/GeminiAI.vue'
-import AppointmentBooking from '../components/AppointmentBooking.vue'
 
 // 创建路由实例
 const router = createRouter({
@@ -71,9 +70,9 @@ const router = createRouter({
       },
     },
     {
-      path: '/email-test',
-      name: 'EmailTest',
-      component: EmailTest,
+      path: '/email-center',
+      name: 'EmailCenter',
+      component: EmailCenter,
       meta: {
         title: 'Email Center',
         requiresAuth: true,
@@ -128,16 +127,6 @@ const router = createRouter({
         title: 'AI Recipe Assistant',
         requiresAuth: false,
         allowedRoles: ['guest', 'user', 'admin'],
-      },
-    },
-    {
-      path: '/appointments',
-      name: 'AppointmentBooking',
-      component: AppointmentBooking,
-      meta: {
-        title: 'Book Appointment',
-        requiresAuth: true,
-        allowedRoles: ['user', 'admin'],
       },
     },
   ],

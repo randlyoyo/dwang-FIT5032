@@ -316,6 +316,12 @@ const itemsPerPage = ref(12)
 onMounted(async () => {
   await fetchRecipes()
 
+  // Check if there's a category filter in the query params (from chart navigation)
+  if (route.query.category) {
+    categoryFilter.value = route.query.category
+    console.log('Applied category filter from URL:', route.query.category)
+  }
+
   // Check if there's a recipe ID in the query params
   if (route.query.id) {
     highlightedRecipeId.value = route.query.id
@@ -344,15 +350,15 @@ onMounted(async () => {
   }
 })
 
-// 根据卡路里计算默认蛋白质值
+// Calculate default protein value based on calories
 const getDefaultProtein = (calories) => {
   if (!calories || calories === 0) return '8g'
-  // 一般每100卡路里约含4-6g蛋白质
+  // Generally about 4-6g protein per 100 calories
   const protein = Math.round((calories / 100) * 5)
   return `${protein}g`
 }
 
-// Cloud Functions集成：获取食谱分析数据
+// Cloud Functions integration: Get recipe analytics data
 const recipeAnalytics = ref({})
 const loadingAnalytics = ref(false)
 
@@ -370,7 +376,7 @@ const getRecipeAnalytics = async (recipeId) => {
   }
 }
 
-// Cloud Functions集成：获取个性化推荐
+// Cloud Functions integration: Get personalized recommendations
 const getPersonalizedRecommendations = async () => {
   try {
     const result = await cloudFunctions.getRecipeRecommendations({
@@ -389,7 +395,7 @@ const fetchRecipes = async () => {
     error.value = null
 
     // Fetch ALL recipes from Firestore (no limit)
-    // 先尝试获取所有食谱，不限制isPublished字段
+    // First try to get all recipes without limiting by isPublished field
     const q = query(collection(db, 'recipes'))
     const querySnapshot = await getDocs(q)
 
@@ -397,7 +403,7 @@ const fetchRecipes = async () => {
 
     recipes.value = querySnapshot.docs.map((doc) => {
       const data = doc.data()
-      console.log('Raw Firestore data for recipe:', doc.id, data) // 调试：查看原始数据
+      console.log('Raw Firestore data for recipe:', doc.id, data) // Debug: View raw data
       return {
         id: doc.id,
         name: data.title || data.name || 'Untitled Recipe',
@@ -410,10 +416,10 @@ const fetchRecipes = async () => {
         servings: data.servings || 1,
         description: data.description || 'No description available',
         tags: data.tags || [],
-        rating: data.rating || null, // 保持null而不是0，因为不是所有食谱都有评分
+        rating: data.rating || null, // Keep null instead of 0 since not all recipes have ratings
         views: data.views || 0,
         likes: data.likes || 0,
-        calories: data.calories || null, // 保持null而不是0，因为不是所有食谱都有卡路里
+        calories: data.calories || null, // Keep null instead of 0 since not all recipes have calories
         protein: data.protein || null,
         ingredients: data.ingredients || [],
         instructions: data.instructions || [],
@@ -427,7 +433,7 @@ const fetchRecipes = async () => {
     })
 
     console.log(`✅ Loaded ${recipes.value.length} recipes from Firestore`)
-    console.log('Sample recipe data:', recipes.value[0]) // 调试：查看第一个食谱的数据结构
+    console.log('Sample recipe data:', recipes.value[0]) // Debug: View first recipe data structure
   } catch (err) {
     console.error('Error fetching recipes from Firestore:', err)
     error.value = 'Failed to load recipes. Please try again later.'
@@ -573,7 +579,7 @@ const exportRecipes = (format = 'csv') => {
     )
 
     const exportData = filteredRecipes.value.map((recipe) => {
-      // 安全处理时间戳
+      // Safely handle timestamp
       const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'N/A'
         try {
@@ -666,7 +672,7 @@ const exportAsCSV = (data) => {
         .map((header) => {
           const value = row[header] || ''
           const stringValue = String(value)
-          // 处理换行符和特殊字符
+          // Handle line breaks and special characters
           const escapedValue = stringValue
             .replace(/"/g, '""')
             .replace(/\n/g, ' ')

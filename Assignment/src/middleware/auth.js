@@ -1,33 +1,33 @@
-// 认证中间件 - 提供安全认证功能，支持Firebase Auth
+// Authentication middleware - provides secure authentication features, supports Firebase Auth
 import firebaseAuthService from '../services/firebaseAuth.js'
 
 export const authMiddleware = {
-  // 检查用户是否已认证（支持Firebase）
+  // Check if user is authenticated (supports Firebase)
   isAuthenticated() {
-    // 首先检查Firebase认证状态
+    // First check Firebase authentication status
     if (firebaseAuthService.isAuthenticated()) {
       return true
     }
 
-    // 回退到本地存储检查
+    // Fallback to local storage check
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
     return !!currentUser
   },
 
-  // 获取当前用户信息（支持Firebase）
+  // Get current user information (supports Firebase)
   getCurrentUser() {
-    // 从本地存储获取用户信息（已在登录时保存完整信息）
+    // Get user information from local storage (already saved complete information on login)
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null')
     console.log('authMiddleware.getCurrentUser - returning:', currentUser)
     return currentUser
   },
 
-  // 检查用户角色
+  // Check user role
   hasRole(requiredRole) {
     const currentUser = this.getCurrentUser()
     if (!currentUser) return false
 
-    // 角色层级检查
+    // Role hierarchy check
     const roleHierarchy = {
       guest: 0,
       user: 1,
@@ -40,35 +40,35 @@ export const authMiddleware = {
     return userLevel >= requiredLevel
   },
 
-  // 检查是否为管理员
+  // Check if user is admin
   isAdmin() {
     return this.hasRole('admin')
   },
 
-  // 检查是否为普通用户
+  // Check if user is regular user
   isUser() {
     return this.hasRole('user')
   },
 
-  // 简化登录
+  // Simplified login
   login(userData) {
     try {
       console.log('authMiddleware.login - received userData:', userData)
 
-      // 验证用户数据
+      // Validate user data
       if (!this.validateUserData(userData)) {
         console.error('authMiddleware.login - validation failed for:', userData)
         throw new Error('Invalid user data provided')
       }
 
-      // 存储用户数据
+      // Store user data
       localStorage.setItem('currentUser', JSON.stringify(userData))
 
-      // 验证存储
+      // Verify storage
       const stored = JSON.parse(localStorage.getItem('currentUser'))
       console.log('authMiddleware.login - stored userData:', stored)
 
-      // 记录登录日志
+      // Log login event
       this.logSecurityEvent('user_login', {
         username: userData.username,
         role: userData.role,
@@ -86,11 +86,11 @@ export const authMiddleware = {
     }
   },
 
-  // 安全登出（支持Firebase）
+  // Secure logout (supports Firebase)
   async logout() {
     const currentUser = this.getCurrentUser()
     if (currentUser) {
-      // 记录登出日志
+      // Log logout event
       this.logSecurityEvent('user_logout', {
         username: currentUser.username,
         role: currentUser.role,
@@ -98,7 +98,7 @@ export const authMiddleware = {
       })
     }
 
-    // Firebase登出
+    // Firebase logout
     if (firebaseAuthService.isAuthenticated()) {
       try {
         await firebaseAuthService.signOut()
@@ -107,22 +107,22 @@ export const authMiddleware = {
       }
     }
 
-    // 清除本地用户数据
+    // Clear local user data
     localStorage.removeItem('currentUser')
 
-    // 清除其他相关数据
+    // Clear other related data
     localStorage.removeItem('userPreferences')
     localStorage.removeItem('savedRecipes')
     localStorage.removeItem('favoriteRecipes')
   },
 
-  // 更新用户活动时间（简化版）
+  // Update user activity time (simplified version)
   updateActivity() {
-    // 简化版本，不进行复杂的活动跟踪
+    // Simplified version, no complex activity tracking
     return true
   },
 
-  // 验证用户数据
+  // Validate user data
   validateUserData(userData) {
     if (!userData || typeof userData !== 'object') return false
 
@@ -133,13 +133,13 @@ export const authMiddleware = {
       }
     }
 
-    // 验证角色
+    // Validate role
     const validRoles = ['user', 'admin']
     if (!validRoles.includes(userData.role)) {
       return false
     }
 
-    // 验证邮箱格式
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(userData.email)) {
       return false
@@ -148,12 +148,12 @@ export const authMiddleware = {
     return true
   },
 
-  // 生成简单ID（简化版）
+  // Generate simple ID (simplified version)
   generateSessionId() {
     return 'user_' + Date.now()
   },
 
-  // 记录安全事件
+  // Log security event
   logSecurityEvent(eventType, data) {
     const securityLog = {
       eventType,
@@ -165,17 +165,17 @@ export const authMiddleware = {
 
     console.log('Security Event:', securityLog)
 
-    // 在真实应用中，这里应该发送到安全日志服务器
+    // In a real application, this should be sent to a security log server
     // this.sendToSecurityServer(securityLog)
   },
 
-  // 简化的会话检查
+  // Simplified session check
   isSessionValid() {
     const currentUser = this.getCurrentUser()
     return !!currentUser
   },
 
-  // 简化的会话刷新
+  // Simplified session refresh
   refreshSession() {
     const currentUser = this.getCurrentUser()
     if (currentUser) {
@@ -185,8 +185,8 @@ export const authMiddleware = {
     return false
   },
 
-  // Firebase相关辅助方法
-  // 发送密码重置邮件
+  // Firebase related helper methods
+  // Send password reset email
   async sendPasswordReset(email) {
     try {
       const result = await firebaseAuthService.sendPasswordReset(email)
@@ -201,7 +201,7 @@ export const authMiddleware = {
   },
 }
 
-// 权限检查装饰器
+// Permission check decorator
 export const requireAuth = (to, from, next) => {
   if (!authMiddleware.isAuthenticated()) {
     next({ name: 'Auth', query: { redirect: to.fullPath } })
@@ -210,7 +210,7 @@ export const requireAuth = (to, from, next) => {
   }
 }
 
-// 管理员权限检查装饰器
+// Admin permission check decorator
 export const requireAdmin = (to, from, next) => {
   if (!authMiddleware.isAdmin()) {
     next({ name: 'Home' })
@@ -219,7 +219,7 @@ export const requireAdmin = (to, from, next) => {
   }
 }
 
-// 角色权限检查装饰器
+// Role permission check decorator
 export const requireRole = (role) => {
   return (to, from, next) => {
     if (!authMiddleware.hasRole(role)) {

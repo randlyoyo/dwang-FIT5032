@@ -1,9 +1,9 @@
-// Firebase配置文件
+// Firebase configuration file
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
-// Firebase配置 - 从Firebase控制台获取
+// Firebase configuration - obtained from Firebase console
 const firebaseConfig = {
   apiKey: 'AIzaSyCiHLtSu1gPIw_EAa4DUQbK5RGJA_gXkdE',
   authDomain: 'assignment-cfc8f.firebaseapp.com',
@@ -14,15 +14,15 @@ const firebaseConfig = {
   measurementId: 'G-JYQKQDTYTM',
 }
 
-// 初始化Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig)
 
-// 初始化Firebase Auth
+// Initialize Firebase Auth
 export const auth = getAuth(app)
 
-// 初始化Firestore
+// Initialize Firestore
 export const db = getFirestore(app)
 
-// 导出 app 实例（支持命名导出和默认导出）
+// Export app instance (supports named and default exports)
 export { app }
 export default app

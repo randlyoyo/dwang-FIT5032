@@ -456,13 +456,13 @@ const saveRecipe = async (status) => {
 }
 
 onMounted(async () => {
-  // 检查管理员权限
+  // Check admin permissions
   if (!authMiddleware.isAdmin()) {
     router.push({ name: 'Home' })
     return
   }
 
-  // 加载真实数据
+  // Load real data
   await loadAllData()
 })
 
@@ -479,11 +479,11 @@ const loadAllData = async () => {
 
 const loadStats = async () => {
   try {
-    // 获取用户统计
+    // Get user statistics
     const usersSnapshot = await getDocs(collection(db, 'users'))
     stats.value.totalUsers = usersSnapshot.size
 
-    // 统计活跃用户（有 isActive 字段的）
+    // Count active users (those with isActive field)
     let activeCount = 0
     usersSnapshot.forEach((doc) => {
       const userData = doc.data()
@@ -493,11 +493,11 @@ const loadStats = async () => {
     })
     stats.value.activeUsers = activeCount
 
-    // 获取食谱统计
+    // Get recipe statistics
     const recipesSnapshot = await getDocs(collection(db, 'recipes'))
     stats.value.totalRecipes = recipesSnapshot.size
 
-    // 统计已发布的食谱
+    // Count published recipes
     let publishedCount = 0
     recipesSnapshot.forEach((doc) => {
       const recipeData = doc.data()
@@ -526,7 +526,7 @@ const loadRecentUsers = async () => {
     console.log('Recent users loaded:', recentUsers.value.length)
   } catch (error) {
     console.error('Error loading recent users:', error)
-    // 如果排序失败，尝试不排序直接获取
+    // If sorting fails, try fetching without sorting
     try {
       const querySnapshot = await getDocs(collection(db, 'users'))
       recentUsers.value = querySnapshot.docs.slice(0, 10).map((doc) => ({

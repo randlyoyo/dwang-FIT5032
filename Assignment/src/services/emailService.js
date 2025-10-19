@@ -1,18 +1,18 @@
-// 安全的EmailJS服务
+// Secure EmailJS Service
 import emailjs from '@emailjs/browser'
 import emailjsConfig from '../config/emailjs.js'
 
 class SecureEmailService {
   constructor() {
     this.config = emailjsConfig
-    this.rateLimit = new Map() // 存储发送频率限制
+    this.rateLimit = new Map() // Store rate limit history
     this.isInitialized = false
 
-    // 初始化EmailJS
+    // Initialize EmailJS
     this.initialize()
   }
 
-  // 初始化EmailJS
+  // Initialize EmailJS
   initialize() {
     try {
       emailjs.init(this.config.publicKey)
@@ -24,7 +24,7 @@ class SecureEmailService {
     }
   }
 
-  // 检查域名白名单
+  // Check domain whitelist
   checkDomainWhitelist() {
     if (!this.config.security.enableDomainWhitelist) return true
 
@@ -41,28 +41,28 @@ class SecureEmailService {
     return isAllowed
   }
 
-  // 检查发送频率限制
+  // Check rate limit
   checkRateLimit(userId = 'default') {
     if (!this.config.security.enableRateLimit) return true
 
     const now = Date.now()
     const userRequests = this.rateLimit.get(userId) || []
 
-    // 清理1分钟前的记录
+    // Clean up records older than 1 minute
     const recentRequests = userRequests.filter((timestamp) => now - timestamp < 60000)
 
-    // 检查是否超过限制
+    // Check if limit exceeded
     if (recentRequests.length >= this.config.security.maxRequestsPerMinute) {
       return false
     }
 
-    // 记录当前请求
+    // Record current request
     recentRequests.push(now)
     this.rateLimit.set(userId, recentRequests)
     return true
   }
 
-  // 内容安全检查
+  // Check content safety
   checkContentSafety(content) {
     if (!this.config.security.enableContentFilter) return true
 
@@ -70,7 +70,7 @@ class SecureEmailService {
     return !this.config.security.blockedKeywords.some((keyword) => lowerContent.includes(keyword))
   }
 
-  // 验证邮件参数
+  // Validate email parameters
   validateEmailParams(params) {
     const requiredFields = ['to_email', 'from_name', 'message']
 
@@ -80,13 +80,13 @@ class SecureEmailService {
       }
     }
 
-    // 验证邮箱格式
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(params.to_email)) {
       throw new Error('Invalid email format')
     }
 
-    // 验证内容长度
+    // Validate message length
     if (params.message.length > 10000) {
       throw new Error('Message too long')
     }
@@ -94,10 +94,10 @@ class SecureEmailService {
     return true
   }
 
-  // 发送邮件 - 主要方法
+  // Send email - main method
   async sendEmail(params) {
     try {
-      // 安全检查
+      // Security checks
       if (!this.isInitialized) {
         throw new Error('EmailJS not initialized')
       }
@@ -114,10 +114,10 @@ class SecureEmailService {
         throw new Error('Content contains blocked keywords')
       }
 
-      // 验证参数
+      // Validate parameters
       this.validateEmailParams(params)
 
-      // 准备发送参数
+      // Prepare sending parameters
       const templateParams = {
         to_email: params.to_email,
         from_name: params.from_name,
@@ -127,7 +127,7 @@ class SecureEmailService {
         user_id: params.user_id || 'anonymous',
       }
 
-      // 发送邮件
+      // Send email
       const result = await emailjs.send(
         this.config.serviceId,
         this.config.templateId,
@@ -150,7 +150,7 @@ class SecureEmailService {
     }
   }
 
-  // 发送用户注册确认邮件
+  // Send user registration confirmation email
   async sendRegistrationConfirmation(userEmail, userName) {
     const params = {
       to_email: userEmail,
@@ -163,7 +163,7 @@ class SecureEmailService {
     return await this.sendEmail(params)
   }
 
-  // 发送密码重置邮件
+  // Send password reset email
   async sendPasswordReset(userEmail, resetLink) {
     const params = {
       to_email: userEmail,
@@ -176,7 +176,7 @@ class SecureEmailService {
     return await this.sendEmail(params)
   }
 
-  // 发送联系表单邮件
+  // Send contact form email
   async sendContactForm(formData) {
     const params = {
       to_email: 'admin@healthyrecipehub.com',
@@ -190,7 +190,7 @@ class SecureEmailService {
     return await this.sendEmail(params)
   }
 
-  // 发送食谱分享通知
+  // Send recipe share notification
   async sendRecipeShareNotification(userEmail, recipeName, sharedBy) {
     const params = {
       to_email: userEmail,
@@ -203,7 +203,101 @@ class SecureEmailService {
     return await this.sendEmail(params)
   }
 
-  // 获取发送统计
+  // Convert file to Base64
+  fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
+  // Send email with attachments
+  async sendEmailWithAttachments(params, files = []) {
+    try {
+      // Security checks
+      if (!this.isInitialized) {
+        throw new Error('EmailJS not initialized')
+      }
+
+      if (!this.checkDomainWhitelist()) {
+        throw new Error('Domain not whitelisted')
+      }
+
+      if (!this.checkRateLimit(params.user_id)) {
+        throw new Error('Rate limit exceeded')
+      }
+
+      if (!this.checkContentSafety(params.message)) {
+        throw new Error('Content contains blocked keywords')
+      }
+
+      // Validate parameters
+      this.validateEmailParams(params)
+
+      // Prepare base parameters
+      const templateParams = {
+        to_email: params.to_email,
+        from_name: params.from_name,
+        message: params.message,
+        subject: params.subject || 'Message from Healthy Recipe Hub',
+        reply_to: params.reply_to || params.to_email,
+        user_id: params.user_id || 'anonymous',
+      }
+
+      // Handle attachments
+      if (files && files.length > 0) {
+        console.log(`Processing ${files.length} attachments...`)
+        
+        // Convert all files to Base64
+        const attachmentPromises = files.map(async (file, index) => {
+          const base64 = await this.fileToBase64(file)
+          return {
+            name: file.name,
+            data: base64,
+          }
+        })
+
+        const attachments = await Promise.all(attachmentPromises)
+        
+        // Add attachments to parameters
+        // EmailJS supports passing attachment info through template parameters
+        templateParams.attachments = JSON.stringify(attachments)
+        templateParams.attachment_count = attachments.length
+        
+        // Add attachment list to email content
+        const attachmentList = files
+          .map((f) => `- ${f.name} (${(f.size / 1024).toFixed(2)} KB)`)
+          .join('\n')
+        templateParams.message = `${params.message}\n\n---\nAttachments (${files.length}):\n${attachmentList}`
+      }
+
+      // Send email
+      const result = await emailjs.send(
+        this.config.serviceId,
+        this.config.templateId,
+        templateParams,
+      )
+
+      console.log('Email sent successfully with attachments:', result)
+      return {
+        success: true,
+        messageId: result.text,
+        timestamp: new Date().toISOString(),
+        attachmentCount: files ? files.length : 0,
+      }
+    } catch (error) {
+      console.error('Email sending with attachments failed:', error)
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      }
+    }
+  }
+
+  // Get sending statistics
   getSendingStats() {
     const totalRequests = Array.from(this.rateLimit.values()).flat().length
 
@@ -215,7 +309,7 @@ class SecureEmailService {
   }
 }
 
-// 创建单例实例
+// Create singleton instance
 const emailService = new SecureEmailService()
 
 export default emailService

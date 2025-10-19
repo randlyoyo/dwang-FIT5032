@@ -74,7 +74,7 @@
                   </div>
                 </div>
 
-                <!-- Cloud Functions统计信息 -->
+                <!-- Cloud Functions statistics -->
                 <div v-if="stats.memberSince || stats.lastLogin" class="mt-3">
                   <h6>Server Statistics (via Cloud Functions)</h6>
                   <div class="row">
@@ -115,42 +115,42 @@ const stats = ref({
   loginCount: 0,
 })
 
-// 移除复杂的会话状态检查
+// Remove complex session state check
 
 onMounted(() => {
-  // 检查用户认证
+  // Check user authentication
   if (!authMiddleware.isAuthenticated()) {
     router.push({ name: 'Auth' })
     return
   }
 
-  // 记录用户访问个人资料
+  // Log user access to profile
   authMiddleware.logSecurityEvent('profile_access', {
     username: currentUser.value?.username,
     timestamp: new Date().toISOString(),
   })
 
-  // 加载统计数据
+  // Load statistics data
   loadStats()
 })
 
 const loadStats = async () => {
-  // 从localStorage加载用户数据
+  // Load user data from localStorage
   const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
   const favoriteRecipes = JSON.parse(localStorage.getItem('favoriteRecipes') || '[]')
 
-  // 基础统计数据
+  // Basic statistics data
   stats.value = {
     savedRecipes: savedRecipes.length,
     favoriteRecipes: favoriteRecipes.length,
     loginCount: currentUser.value?.loginCount || 1,
   }
 
-  // 使用Cloud Functions获取服务器端统计数据
+  // Use Cloud Functions to get server-side statistics
   try {
     const serverStats = await cloudFunctions.getUserStats()
     if (serverStats && serverStats.success) {
-      // 合并服务器端统计数据
+      // Merge server-side statistics
       stats.value = {
         ...stats.value,
         recipesCreated: serverStats.stats.recipesCreated || 0,
@@ -162,7 +162,7 @@ const loadStats = async () => {
     }
   } catch (error) {
     console.error('Error loading server stats:', error)
-    // 如果Cloud Functions失败，继续使用本地数据
+    // If Cloud Functions fails, continue using local data
   }
 }
 

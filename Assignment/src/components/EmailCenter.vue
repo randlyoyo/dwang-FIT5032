@@ -160,14 +160,25 @@
                     Max 500KB per file, max 3 files. Supported: images, PDF, DOC, TXT
                   </small>
                 </label>
-                <input
-                  type="file"
-                  class="form-control"
-                  @change="handleFileSelect"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx,.txt"
-                  ref="fileInput"
-                />
+                <div class="custom-file-upload">
+                  <input
+                    type="file"
+                    class="d-none"
+                    @change="handleFileSelect"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    ref="fileInput"
+                    id="fileUpload"
+                  />
+                  <label for="fileUpload" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-upload me-2"></i>
+                    {{
+                      attachments.length > 0
+                        ? `${attachments.length} file(s) selected`
+                        : 'Choose Files'
+                    }}
+                  </label>
+                </div>
 
                 <!-- Selected Files List -->
                 <div v-if="attachments.length > 0" class="mt-3">
@@ -820,7 +831,7 @@ const handleSubmit = async () => {
   isLoading.value = true
 
   try {
-    // 验证收件人
+    // Validate recipients
     if (recipients.value.length === 0) {
       throw new Error('Please add at least one recipient')
     }
@@ -829,7 +840,7 @@ const handleSubmit = async () => {
     const recipientCount = recipientsList.length
     const type = recipientCount === 1 ? 'Single' : 'Multiple'
 
-    // 验证表单
+    // Validate form
     if (!formData.fromName) {
       throw new Error('Please enter sender name')
     }
@@ -842,21 +853,27 @@ const handleSubmit = async () => {
 
     console.log('📧 Sending emails to:', recipientsList)
 
-    // 实际发送邮件 - 逐个发送
+    // Actually send emails - send one by one
     let successCount = 0
     let failedCount = 0
     const errors = []
 
     for (const email of recipientsList) {
       try {
-        const result = await emailService.sendEmail({
+        const emailParams = {
           to_email: email,
           from_name: formData.fromName,
           subject: formData.subject,
           message: formData.message,
           reply_to: email,
           user_id: email,
-        })
+        }
+
+        // Send email with or without attachments
+        const result =
+          attachments.value.length > 0
+            ? await emailService.sendEmailWithAttachments(emailParams, attachments.value)
+            : await emailService.sendEmail(emailParams)
 
         if (result.success) {
           successCount++
@@ -872,7 +889,7 @@ const handleSubmit = async () => {
         console.error(`❌ Error sending to ${email}:`, error)
       }
 
-      // 添加小延迟避免触发速率限制
+      // Add small delay to avoid triggering rate limit
       if (recipientsList.length > 1) {
         await new Promise((resolve) => setTimeout(resolve, 500))
       }
@@ -906,7 +923,7 @@ const handleSubmit = async () => {
     // Update stats
     sendingStats.value.totalRequests += successCount
 
-    // 显示结果
+    // Display result
     if (successCount === recipientCount) {
       showMessage(
         `✅ Email sent successfully to ${successCount} recipient(s)! Please check inbox (may be in spam folder).`,
@@ -1169,6 +1186,11 @@ onMounted(() => {
   const saved = localStorage.getItem('emailHistory')
   if (saved) {
     campaignHistory.value = JSON.parse(saved)
+    // Calculate total sent emails from history
+    sendingStats.value.totalRequests = campaignHistory.value.reduce(
+      (total, item) => total + (item.successCount || 0),
+      0,
+    )
   }
 
   // Load drafts
@@ -1273,5 +1295,33 @@ textarea {
   .btn-group .btn {
     flex: 1;
   }
+}
+
+/* Custom File Upload Button */
+.custom-file-upload {
+  position: relative;
+}
+
+.custom-file-upload label {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  font-weight: 500;
+}
+
+.custom-file-upload label:hover {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+}
+
+.custom-file-upload label i {
+  font-size: 1.1rem;
 }
 </style>

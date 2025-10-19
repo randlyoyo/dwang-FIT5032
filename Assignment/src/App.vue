@@ -5,23 +5,23 @@ import { authMiddleware } from './middleware/auth.js'
 
 const router = useRouter()
 
-// 使用ref来强制响应式更新
+// Use ref to force reactive updates
 const authState = ref(0)
 
 const currentUser = computed(() => {
-  // 依赖authState来触发重新计算
+  // Depend on authState to trigger recalculation
   authState.value
   return authMiddleware.getCurrentUser()
 })
 
 const isAuthenticated = computed(() => {
-  // 依赖authState来触发重新计算
+  // Depend on authState to trigger recalculation
   authState.value
   return authMiddleware.isAuthenticated()
 })
 
 const isAdmin = computed(() => {
-  // 依赖authState来触发重新计算
+  // Depend on authState to trigger recalculation
   authState.value
   const adminStatus = authMiddleware.isAdmin()
   const currentUser = authMiddleware.getCurrentUser()
@@ -33,45 +33,45 @@ const isAdmin = computed(() => {
   return adminStatus
 })
 
-// 强制更新认证状态
+// Force update authentication state
 const refreshAuthState = () => {
   authState.value++
 }
 
-// 无障碍功能状态 - 添加键盘控制和阅读功能
+// Accessibility feature state - add keyboard control and reading functions
 const accessibilityState = ref({
-  accessibilityMode: false, // 主要无障碍模式开关
-  textToSpeech: false, // 文本朗读功能
-  keyboardNavigation: false, // 键盘导航功能
+  accessibilityMode: false, // Main accessibility mode switch
+  textToSpeech: false, // Text-to-speech function
+  keyboardNavigation: false, // Keyboard navigation function
 })
 
-// 键盘导航状态
+// Keyboard navigation state
 const keyboardNavState = ref({
   currentIndex: -1,
   focusableElements: [],
   isActive: false,
 })
 
-// 文本朗读功能
+// Text-to-speech function
 const speechSynthesis = ref(null)
 const isSpeaking = ref(false)
 
-// 切换无障碍模式 - 简化版
+// Toggle accessibility mode - simplified version
 const toggleAccessibilityMode = () => {
   accessibilityState.value.accessibilityMode = !accessibilityState.value.accessibilityMode
 
   if (accessibilityState.value.accessibilityMode) {
-    // 启用无障碍模式
+    // Enable accessibility mode
     enableAccessibilityMode()
   } else {
-    // 禁用无障碍模式
+    // Disable accessibility mode
     disableAccessibilityMode()
   }
 
-  // 保存到localStorage
+  // Save to localStorage
   localStorage.setItem('accessibility-mode', accessibilityState.value.accessibilityMode.toString())
 
-  // 屏幕阅读器提示
+  // Screen reader announcement
   announceToScreenReader(
     accessibilityState.value.accessibilityMode
       ? 'Accessibility mode enabled'
@@ -79,51 +79,51 @@ const toggleAccessibilityMode = () => {
   )
 }
 
-// 启用无障碍模式 - 添加键盘控制和阅读功能
+// Enable accessibility mode - add keyboard control and reading functions
 const enableAccessibilityMode = () => {
-  // 启用所有无障碍功能
+  // Enable all accessibility features
   accessibilityState.value.textToSpeech = true
   accessibilityState.value.keyboardNavigation = true
 
-  // 应用CSS类
+  // Apply CSS classes
   document.body.classList.add('large-text', 'high-contrast', 'keyboard-nav', 'focus-indicator')
 
-  // 初始化键盘导航
+  // Initialize keyboard navigation
   initializeKeyboardNavigation()
 
-  // 初始化文本朗读
+  // Initialize text-to-speech
   initializeTextToSpeech()
 
-  // 保存设置
+  // Save settings
   localStorage.setItem('accessibility-large-text', 'true')
   localStorage.setItem('accessibility-high-contrast', 'true')
   localStorage.setItem('accessibility-text-to-speech', 'true')
   localStorage.setItem('accessibility-keyboard-navigation', 'true')
 }
 
-// 禁用无障碍模式 - 添加键盘控制和阅读功能
+// Disable accessibility mode - add keyboard control and reading functions
 const disableAccessibilityMode = () => {
-  // 禁用所有无障碍功能
+  // Disable all accessibility features
   accessibilityState.value.textToSpeech = false
   accessibilityState.value.keyboardNavigation = false
 
-  // 移除CSS类
+  // Remove CSS classes
   document.body.classList.remove('large-text', 'high-contrast', 'keyboard-nav', 'focus-indicator')
 
-  // 停止文本朗读
+  // Stop text-to-speech
   stopTextToSpeech()
 
-  // 禁用键盘导航
+  // Disable keyboard navigation
   disableKeyboardNavigation()
 
-  // 清除设置
+  // Clear settings
   localStorage.removeItem('accessibility-large-text')
   localStorage.removeItem('accessibility-high-contrast')
   localStorage.removeItem('accessibility-text-to-speech')
   localStorage.removeItem('accessibility-keyboard-navigation')
 }
 
-// 文本朗读功能
+// Text-to-speech function
 const initializeTextToSpeech = () => {
   if ('speechSynthesis' in window) {
     speechSynthesis.value = window.speechSynthesis
@@ -158,19 +158,19 @@ const stopTextToSpeech = () => {
   }
 }
 
-// 键盘导航功能
+// Keyboard navigation function
 const initializeKeyboardNavigation = () => {
   keyboardNavState.value.isActive = true
   updateFocusableElements()
 
-  // 设置初始焦点
+  // Set initial focus
   if (keyboardNavState.value.focusableElements.length > 0) {
     keyboardNavState.value.currentIndex = 0
     const firstElement = keyboardNavState.value.focusableElements[0]
     firstElement.classList.add('keyboard-focus')
   }
 
-  // 添加键盘事件监听器
+  // Add keyboard event listener
   document.addEventListener('keydown', handleKeyboardNavigation)
 
   console.log(
@@ -184,7 +184,7 @@ const disableKeyboardNavigation = () => {
   keyboardNavState.value.isActive = false
   document.removeEventListener('keydown', handleKeyboardNavigation)
 
-  // 移除所有焦点指示器
+  // Remove all focus indicators
   document.querySelectorAll('.keyboard-focus').forEach((el) => {
     el.classList.remove('keyboard-focus')
   })
@@ -232,7 +232,7 @@ const handleKeyboardNavigation = (event) => {
   const { key } = event
   console.log('Keyboard navigation key pressed:', key)
 
-  // 方向键导航
+  // Arrow key navigation
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
     event.preventDefault()
     event.stopPropagation()
@@ -255,12 +255,12 @@ const handleKeyboardNavigation = (event) => {
     console.log('Navigating from index', currentIndex, 'to', newIndex)
 
     if (newIndex !== currentIndex && elements.length > 0) {
-      // 移除当前焦点指示器
+      // Remove current focus indicator
       if (currentIndex >= 0 && elements[currentIndex]) {
         elements[currentIndex].classList.remove('keyboard-focus')
       }
 
-      // 添加新的焦点指示器
+      // Add new focus indicator
       keyboardNavState.value.currentIndex = newIndex
       const targetElement = elements[newIndex]
 
@@ -268,10 +268,10 @@ const handleKeyboardNavigation = (event) => {
         targetElement.classList.add('keyboard-focus')
         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
-        // 强制聚焦到元素
+        // Force focus to element
         targetElement.focus()
 
-        // 朗读元素内容
+        // Read element content
         if (accessibilityState.value.textToSpeech && speechSynthesis.value) {
           const text =
             targetElement.textContent ||
@@ -280,7 +280,7 @@ const handleKeyboardNavigation = (event) => {
             targetElement.getAttribute('alt') ||
             ''
           if (text.trim()) {
-            speechSynthesis.value.cancel() // 停止之前的朗读
+            speechSynthesis.value.cancel() // Stop previous reading
             const utterance = new SpeechSynthesisUtterance(text.trim())
             utterance.rate = 0.8
             utterance.pitch = 1
@@ -298,7 +298,7 @@ const handleKeyboardNavigation = (event) => {
     }
   }
 
-  // Enter键激活元素
+  // Enter key to activate element
   if (key === 'Enter' && keyboardNavState.value.currentIndex >= 0) {
     event.preventDefault()
     event.stopPropagation()
@@ -311,7 +311,7 @@ const handleKeyboardNavigation = (event) => {
     }
   }
 
-  // Space键激活元素（用于按钮）
+  // Space key to activate element (for buttons)
   if (key === ' ' && keyboardNavState.value.currentIndex >= 0) {
     event.preventDefault()
     event.stopPropagation()
@@ -327,7 +327,7 @@ const handleKeyboardNavigation = (event) => {
     }
   }
 
-  // Escape键退出键盘导航
+  // Escape key to exit keyboard navigation
   if (key === 'Escape') {
     event.preventDefault()
     event.stopPropagation()
@@ -335,7 +335,7 @@ const handleKeyboardNavigation = (event) => {
     announceToScreenReader('Keyboard navigation disabled')
   }
 
-  // R键开始/停止朗读
+  // R key to start/stop reading
   if (key === 'r' || key === 'R') {
     event.preventDefault()
     event.stopPropagation()
@@ -351,7 +351,7 @@ const handleKeyboardNavigation = (event) => {
   }
 }
 
-// 向屏幕阅读器宣布消息
+// Announce message to screen reader
 const announceToScreenReader = (message) => {
   const announcement = document.createElement('div')
   announcement.setAttribute('aria-live', 'polite')
@@ -361,28 +361,28 @@ const announceToScreenReader = (message) => {
 
   document.body.appendChild(announcement)
 
-  // 清理
+  // Cleanup
   setTimeout(() => {
     document.body.removeChild(announcement)
   }, 1000)
 }
 
 onMounted(() => {
-  // 基本认证检查
+  // Basic authentication check
   if (isAuthenticated.value) {
     console.log('User is authenticated')
   }
 
-  // 加载保存的无障碍设置
+  // Load saved accessibility settings
   loadAccessibilitySettings()
 
-  // 监听认证状态变化
+  // Listen for authentication state changes
   setInterval(() => {
     refreshAuthState()
   }, 1000)
 })
 
-// 加载无障碍设置 - 支持键盘控制和阅读功能
+// Load accessibility settings - support keyboard control and reading functions
 const loadAccessibilitySettings = () => {
   const accessibilityMode = localStorage.getItem('accessibility-mode') === 'true'
   const textToSpeech = localStorage.getItem('accessibility-text-to-speech') === 'true'
@@ -422,7 +422,7 @@ const loadAccessibilitySettings = () => {
   }
 }
 
-// 这个函数现在由Auth组件直接处理
+// This function is now handled directly by the Auth component
 // const handleAuthentication = (user) => {
 //   if (authMiddleware.login(user)) {
 //     router.push({ name: 'Home' })
@@ -432,11 +432,11 @@ const loadAccessibilitySettings = () => {
 const logout = async () => {
   try {
     await authMiddleware.logout()
-    refreshAuthState() // 强制更新认证状态
+    refreshAuthState() // Force update authentication state
     router.push({ name: 'Home' })
   } catch (error) {
     console.error('Logout error:', error)
-    // 即使出错也要清除本地状态
+    // Clear local state even if error occurs
     localStorage.removeItem('currentUser')
     refreshAuthState()
     router.push({ name: 'Home' })
@@ -457,8 +457,8 @@ const logout = async () => {
     >
       <div class="container">
         <router-link class="navbar-brand fw-bold d-flex align-items-center" to="/">
-          <span class="text-success me-2 fs-4">🍽️</span>
-          <span class="text-success">Healthy Recipe Hub</span>
+          <span class="brand-icon me-2 fs-4">🍽️</span>
+          <span class="brand-text">Healthy Recipe Hub</span>
         </router-link>
 
         <!-- Mobile toggle button -->
@@ -478,15 +478,12 @@ const logout = async () => {
           <div class="navbar-nav ms-auto">
             <router-link class="nav-link" to="/">Home</router-link>
 
-            <!-- 已登录用户显示 -->
+            <!-- Logged in user display -->
             <template v-if="isAuthenticated">
               <router-link class="nav-link" to="/recipes">Recipes</router-link>
               <router-link class="nav-link" to="/store-locator">Find Stores</router-link>
-              <router-link class="nav-link" to="/appointments">
-                <i class="bi bi-calendar-check me-1"></i>Book Appointment
-              </router-link>
 
-              <!-- 用户信息下拉菜单 -->
+              <!-- User info dropdown menu -->
               <div class="nav-item dropdown">
                 <a
                   class="nav-link dropdown-toggle d-flex align-items-center user-menu"
@@ -501,7 +498,7 @@ const logout = async () => {
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
                   <li>
-                    <router-link class="dropdown-item" to="/email-test">
+                    <router-link class="dropdown-item" to="/email-center">
                       <i class="bi bi-envelope me-2"></i>{{ currentUser.email }}
                     </router-link>
                   </li>
@@ -512,8 +509,8 @@ const logout = async () => {
                     </router-link>
                   </li>
                   <li>
-                    <router-link class="dropdown-item" to="/email-test">
-                      <i class="bi bi-envelope-paper me-2"></i>Email
+                    <router-link class="dropdown-item" to="/email-center">
+                      <i class="bi bi-envelope-paper me-2"></i>Email Center
                     </router-link>
                   </li>
                   <li v-if="isAdmin">
@@ -531,7 +528,7 @@ const logout = async () => {
               </div>
             </template>
 
-            <!-- 未登录用户显示 -->
+            <!-- Not logged in user display -->
             <template v-else>
               <router-link
                 class="btn btn-outline-light btn-sm me-2"
@@ -613,7 +610,7 @@ const logout = async () => {
   position: absolute;
   top: -40px;
   left: 0;
-  background: #28a745;
+  background: #1e7e34;
   color: white;
   padding: 8px 16px;
   text-decoration: none;
@@ -624,8 +621,21 @@ const logout = async () => {
 
 .skip-to-main:focus {
   top: 0;
+  background: #1e7e34;
+  color: white;
   outline: 3px solid #ffc107;
   outline-offset: 2px;
+}
+
+/* Brand text with sufficient contrast on dark background */
+.brand-icon,
+.brand-text {
+  color: #5edb5e !important;
+}
+
+.navbar-brand:hover .brand-icon,
+.navbar-brand:hover .brand-text {
+  color: #6fff6f !important;
 }
 
 .hero-section {
@@ -987,7 +997,7 @@ footer a:hover {
   font-size: 1rem;
 }
 
-/* 简化的焦点指示器 */
+/* Simplified focus indicator */
 *:focus {
   outline: 2px solid #007bff !important;
   outline-offset: 2px !important;
@@ -1045,7 +1055,7 @@ footer a:hover {
   padding: 0.9rem 1.4rem !important;
 }
 
-/* 键盘导航样式 */
+/* Keyboard navigation styles */
 .keyboard-nav .keyboard-focus {
   outline: 3px solid #ffc107 !important;
   outline-offset: 3px !important;
@@ -1072,7 +1082,7 @@ footer a:hover {
   z-index: 1000;
 }
 
-/* 焦点指示器 */
+/* Focus indicator */
 .focus-indicator *:focus {
   outline: 3px solid #007bff !important;
   outline-offset: 3px !important;

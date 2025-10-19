@@ -148,51 +148,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Quick Actions Section (for authenticated users) -->
-    <section
-      v-if="isAuthenticated"
-      class="actions-section py-5"
-      aria-labelledby="quick-actions-heading"
-    >
-      <div class="container">
-        <h2 id="quick-actions-heading" class="text-center mb-4 h3">Quick Actions</h2>
-        <div class="row g-3">
-          <div class="col-md-3">
-            <button class="btn btn-outline-primary w-100" @click="navigateToUserManagement">
-              <i class="bi bi-people me-2"></i>Users
-            </button>
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-outline-success w-100" @click="navigateToRecipeManagement">
-              <i class="bi bi-book me-2"></i>Recipes
-            </button>
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-outline-info w-100" @click="navigateToCloudFunctions">
-              <i class="bi bi-cloud me-2"></i>Cloud
-            </button>
-          </div>
-          <div class="col-md-3">
-            <button class="btn btn-outline-warning w-100" @click="navigateToStoreLocator">
-              <i class="bi bi-geo-alt me-2"></i>Stores
-            </button>
-          </div>
-        </div>
-        <div class="row g-3 mt-2">
-          <div class="col-md-6">
-            <button class="btn btn-outline-purple w-100" @click="navigateToAI">
-              <i class="bi bi-stars me-2"></i>AI Assistant
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-secondary w-100" @click="navigateToEmailTest">
-              <i class="bi bi-envelope me-2"></i>Email
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -216,30 +171,6 @@ const navigateToRecipes = () => {
 
 const navigateToAuth = () => {
   router.push({ name: 'Auth' })
-}
-
-const navigateToEmailTest = () => {
-  router.push({ name: 'EmailTest' })
-}
-
-const navigateToUserManagement = () => {
-  router.push({ name: 'UserManagement' })
-}
-
-const navigateToRecipeManagement = () => {
-  router.push({ name: 'Recipes' })
-}
-
-const navigateToCloudFunctions = () => {
-  router.push({ name: 'CloudFunctions' })
-}
-
-const navigateToStoreLocator = () => {
-  router.push({ name: 'StoreLocator' })
-}
-
-const navigateToAI = () => {
-  router.push({ name: 'AIAssistant' })
 }
 
 // Fetch featured recipes from Firestore
@@ -283,9 +214,9 @@ const viewRecipe = (recipeId) => {
 // Get recipe image based on index (using provided images)
 const getRecipeImage = (index) => {
   const images = [
-    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop', // 第一张：烤肉配薄荷
-    'https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=600&h=400&fit=crop', // 第二张：彩椒酿饭
-    'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&h=400&fit=crop', // 第三张：鸡肉炒蔬菜
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop', // First image: Grilled meat with mint
+    'https://images.unsplash.com/photo-1552332386-f8dd00dc2f85?w=600&h=400&fit=crop', // Second image: Stuffed bell peppers
+    'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&h=400&fit=crop', // Third image: Chicken stir-fry with vegetables
   ]
   return images[index] || images[0]
 }
@@ -436,28 +367,6 @@ onMounted(() => {
   color: #28a745;
 }
 
-/* Actions Section */
-.actions-section {
-  background: #fff;
-}
-
-.actions-section h3 {
-  color: #333;
-  font-weight: 600;
-  margin-bottom: 2rem;
-}
-
-.btn-outline-purple {
-  color: #667eea;
-  border-color: #667eea;
-}
-
-.btn-outline-purple:hover {
-  background-color: #667eea;
-  border-color: #667eea;
-  color: white;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
   .hero-section h1 {
@@ -475,11 +384,6 @@ onMounted(() => {
 
   .features-section .col-md-4 {
     margin-bottom: 2rem;
-  }
-
-  .actions-section .col-md-3,
-  .actions-section .col-md-4 {
-    margin-bottom: 0.5rem;
   }
 }
 
