@@ -1,10 +1,12 @@
 /**
  * Data Export Service
- * Supports multiple export formats: CSV, JSON, Excel, PDF-ready
+ * Supports multiple export formats: CSV, JSON, Excel, PDF
  */
 
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
+import jsPDF from 'jspdf'
+import 'jspdf-autotable'
 
 class ExportService {
   /**
@@ -111,15 +113,18 @@ class ExportService {
       // Create worksheet
       const ws = XLSX.utils.json_to_sheet(processedData)
 
-      // Auto-size columns
-      const colWidths = []
+      // Auto-size columns (optimized for performance)
       const headers = Object.keys(processedData[0])
-      headers.forEach((header, i) => {
+      const colWidths = headers.map((header) => {
+        // Sample-based approach for large datasets (only check first 100 rows)
+        const sampleSize = Math.min(100, processedData.length)
+        const sampleData = processedData.slice(0, sampleSize)
+
         const maxLength = Math.max(
           header.length,
-          ...processedData.map((row) => String(row[header] || '').length),
+          ...sampleData.map((row) => String(row[header] || '').length),
         )
-        colWidths[i] = { wch: Math.min(maxLength + 2, 50) } // Max width 50
+        return { wch: Math.min(maxLength + 2, 50) } // Max width 50
       })
       ws['!cols'] = colWidths
 
@@ -163,12 +168,16 @@ class ExportService {
 
         const ws = XLSX.utils.json_to_sheet(sheet.data)
 
-        // Auto-size columns
+        // Auto-size columns (optimized for performance)
         const headers = Object.keys(sheet.data[0])
         const colWidths = headers.map((header) => {
+          // Sample-based approach for large datasets (only check first 100 rows)
+          const sampleSize = Math.min(100, sheet.data.length)
+          const sampleData = sheet.data.slice(0, sampleSize)
+
           const maxLength = Math.max(
             header.length,
-            ...sheet.data.map((row) => String(row[header] || '').length),
+            ...sampleData.map((row) => String(row[header] || '').length),
           )
           return { wch: Math.min(maxLength + 2, 50) }
         })
@@ -209,8 +218,27 @@ class ExportService {
     }
 
     try {
+      // Limit data for PDF to prevent performance issues
+      const maxRows = 1000
+      const limitedData = data.length > maxRows ? data.slice(0, maxRows) : data
+      const isLimited = data.length > maxRows
+
       // Filter columns if specified
-      const displayColumns = columns || Object.keys(data[0]).map((key) => ({ key, label: key }))
+      const displayColumns =
+        columns || Object.keys(limitedData[0]).map((key) => ({ key, label: key }))
+
+      // Generate HTML table using array join for better performance
+      const tableRows = limitedData
+        .map((row) => {
+          const cells = displayColumns
+            .map((col) => {
+              const value = row[col.key]
+              return `<td>${value !== null && value !== undefined ? value : ''}</td>`
+            })
+            .join('')
+          return `<tr>${cells}</tr>`
+        })
+        .join('')
 
       // Generate HTML table
       const html = `
@@ -262,7 +290,8 @@ class ExportService {
 <body>
     <h1>${title}</h1>
     <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
-    <p><strong>Total Records:</strong> ${data.length}</p>
+    <p><strong>Total Records:</strong> ${data.length}${isLimited ? ` (showing first ${maxRows})` : ''}</p>
+    ${isLimited ? '<p style="color: #d9534f;"><strong>Note:</strong> PDF export is limited to first 1000 rows for performance. Use CSV or Excel for full export.</p>' : ''}
 
     <table>
         <thead>
@@ -271,20 +300,7 @@ class ExportService {
             </tr>
         </thead>
         <tbody>
-            ${data
-              .map(
-                (row) => `
-                <tr>
-                    ${displayColumns
-                      .map((col) => {
-                        const value = row[col.key]
-                        return `<td>${value !== null && value !== undefined ? value : ''}</td>`
-                      })
-                      .join('')}
-                </tr>
-            `,
-              )
-              .join('')}
+            ${tableRows}
         </tbody>
     </table>
 

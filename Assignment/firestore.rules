@@ -39,6 +39,14 @@ service cloud.firestore {
                        (resource.data.authorId == request.auth.uid || isAdmin());
     }
     
+    // Stores collection
+    match /stores/{storeId} {
+      // Anyone can read stores
+      allow read: if true;
+      // Only admins can create, update, or delete stores
+      allow create, update, delete: if isAdmin();
+    }
+    
     // Reports collection (admin only)
     match /reports/{reportId} {
       allow read: if isAdmin();

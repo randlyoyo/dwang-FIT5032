@@ -159,6 +159,12 @@
             </div>
           </div>
           <div class="card-body p-0">
+            <!-- Zoom hint message -->
+            <div v-if="showZoomHint" class="alert alert-info m-3" role="alert">
+              <i class="bi bi-zoom-in me-2"></i>
+              <strong>Zoom in to see store markers</strong> - Please zoom in closer to view stores
+              in the area.
+            </div>
             <div ref="mapContainer" class="mapbox-map"></div>
           </div>
         </div>
@@ -206,6 +212,8 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions'
 import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '@/config/firebase'
 
 // Mapbox configuration - directly use token (temporary test)
 const MAPBOX_TOKEN =
@@ -247,63 +255,62 @@ const isSearching = ref(false)
 const showNoResults = ref(false)
 let searchTimeout = null // Debounce timer
 
-// Melbourne healthy food store data
-const stores = ref([
-  {
-    id: 1,
-    name: 'Coles Organic Market',
-    category: 'Supermarket',
-    address: '123 Collins St, Melbourne VIC 3000',
-    lng: 144.9631,
-    lat: -37.8163,
-    rating: 4.5,
-  },
-  {
-    id: 2,
-    name: 'Queen Victoria Market',
-    category: "Farmer's Market",
-    address: 'Queen Victoria Market, Melbourne VIC 3000',
-    lng: 144.9568,
-    lat: -37.8076,
-    rating: 4.8,
-  },
-  {
-    id: 3,
-    name: 'Wholefoods Organic',
-    category: 'Health Food Store',
-    address: '456 Brunswick St, Fitzroy VIC 3065',
-    lng: 144.9789,
-    lat: -37.7994,
-    rating: 4.6,
-  },
-  {
-    id: 4,
-    name: 'Green Life Grocers',
-    category: 'Grocery Store',
-    address: '789 Chapel St, Prahran VIC 3181',
-    lng: 145.0009,
-    lat: -37.8519,
-    rating: 4.4,
-  },
-  {
-    id: 5,
-    name: 'The Source Bulk Foods',
-    category: 'Health Food Store',
-    address: '321 Lygon St, Carlton VIC 3053',
-    lng: 144.9687,
-    lat: -37.8029,
-    rating: 4.7,
-  },
-  {
-    id: 6,
-    name: 'Organic Shop',
-    category: 'Organic Store',
-    address: '555 High St, Northcote VIC 3070',
-    lng: 144.9999,
-    lat: -37.7693,
-    rating: 4.5,
-  },
-])
+// Store data from Firebase
+const stores = ref([])
+const allStores = ref([]) // Cache all stores for filtering
+const MIN_ZOOM_FOR_MARKERS = 12 // Only show markers when zoomed in
+const showZoomHint = ref(false)
+
+// Load stores from Firestore
+const loadStores = async () => {
+  try {
+    console.log('Loading stores from Firestore...')
+    const storesRef = collection(db, 'stores')
+    const snapshot = await getDocs(storesRef)
+
+    allStores.value = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+
+    stores.value = allStores.value
+    console.log(`Loaded ${allStores.value.length} stores from Firestore`)
+  } catch (error) {
+    console.error('Error loading stores:', error)
+    // Fallback to empty array if error
+    allStores.value = []
+    stores.value = []
+  }
+}
+
+// Update visible stores based on map bounds and zoom
+const updateVisibleStores = () => {
+  if (!map.value) return
+
+  const zoom = map.value.getZoom()
+
+  // Show zoom hint if zoom level is too low
+  if (zoom < MIN_ZOOM_FOR_MARKERS) {
+    showZoomHint.value = true
+    stores.value = []
+    return
+  }
+
+  showZoomHint.value = false
+  const bounds = map.value.getBounds()
+
+  // Filter stores within current map bounds
+  stores.value = allStores.value.filter((store) => {
+    return (
+      store.lng >= bounds.getWest() &&
+      store.lng <= bounds.getEast() &&
+      store.lat >= bounds.getSouth() &&
+      store.lat <= bounds.getNorth()
+    )
+  })
+
+  console.log(`Showing ${stores.value.length} stores in current view`)
+}
 
 const filteredStores = computed(() => stores.value)
 
@@ -332,6 +339,9 @@ onMounted(async () => {
       return
     }
 
+    // Load stores from Firestore first
+    await loadStores()
+
     // Set Mapbox token
     mapboxgl.accessToken = MAPBOX_TOKEN
 
@@ -346,8 +356,22 @@ onMounted(async () => {
     // Wait for map to load
     map.value.on('load', () => {
       console.log('Mapbox map loaded successfully')
+      updateVisibleStores()
       addStoreMarkers()
       loading.value = false
+    })
+
+    // Add map movement listeners
+    map.value.on('moveend', () => {
+      updateVisibleStores()
+      clearMarkers()
+      addStoreMarkers()
+    })
+
+    map.value.on('zoomend', () => {
+      updateVisibleStores()
+      clearMarkers()
+      addStoreMarkers()
     })
 
     // Add navigation control
@@ -395,6 +419,12 @@ onUnmounted(() => {
   }
 })
 
+// Clear all markers from map
+const clearMarkers = () => {
+  markers.value.forEach((marker) => marker.remove())
+  markers.value = []
+}
+
 // Add store markers
 const addStoreMarkers = () => {
   stores.value.forEach((store) => {
@@ -412,7 +442,7 @@ const addStoreMarkers = () => {
         <p style="margin: 0; font-size: 12px; color: #666;">${store.category}</p>
         <p style="margin: 5px 0; font-size: 12px;">${store.address}</p>
         <p style="margin: 0; font-size: 12px;">
-          <span style="color: #ffa500;">⭐</span> ${store.rating}
+          <span style="color: #ffa500;">⭐</span> ${store.rating || 'N/A'}
         </p>
       </div>
     `)
@@ -721,7 +751,7 @@ const searchAndNavigate = async () => {
       if (directions.value && map.value.hasControl(directions.value)) {
         map.value.removeControl(directions.value)
       }
-    } catch (e) {
+    } catch {
       console.log('No previous directions')
     }
 
@@ -755,7 +785,7 @@ const changeTravelMode = (mode) => {
       if (directions.value && map.value.hasControl(directions.value)) {
         map.value.removeControl(directions.value)
       }
-    } catch (e) {
+    } catch {
       console.log('No directions to update')
     }
 
@@ -792,7 +822,7 @@ const clearSearch = () => {
     if (directions.value && map.value.hasControl(directions.value)) {
       map.value.removeControl(directions.value)
     }
-  } catch (e) {
+  } catch {
     console.log('No directions to clear')
   }
 
