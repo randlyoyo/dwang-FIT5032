@@ -57,6 +57,15 @@
                   <i class="bi bi-bar-chart-line me-2"></i>Analytics
                 </button>
               </li>
+              <li class="nav-item" role="presentation">
+                <button
+                  class="nav-link"
+                  :class="{ active: activeTab === 'api' }"
+                  @click="activeTab = 'api'"
+                >
+                  <i class="bi bi-code-square me-2"></i>API
+                </button>
+              </li>
             </ul>
 
             <!-- Users Tab -->
@@ -316,6 +325,27 @@
             <div v-show="activeTab === 'analytics'" class="fade-in">
               <InteractiveCharts />
             </div>
+
+            <!-- API Tab -->
+            <div v-show="activeTab === 'api'" class="fade-in">
+              <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                  <h5 class="mb-0"><i class="bi bi-code-square me-2"></i>REST API Access</h5>
+                </div>
+                <div class="card-body">
+                  <div class="list-group">
+                    <div class="list-group-item">
+                      <h6 class="mb-2">Get All Recipes</h6>
+                      <code class="d-block">{{ apiBaseUrl }}/apiRecipes</code>
+                    </div>
+                    <div class="list-group-item">
+                      <h6 class="mb-2">Get Recipe by ID</h6>
+                      <code class="d-block">{{ apiBaseUrl }}/apiRecipeById/:id</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -348,6 +378,9 @@ const stats = ref({
 })
 
 const recentUsers = ref([])
+
+// REST API
+const apiBaseUrl = ref('https://us-central1-assignment-cfc8f.cloudfunctions.net')
 
 // Recipe Form Data
 const recipeForm = ref({
@@ -538,10 +571,6 @@ const loadRecentUsers = async () => {
       recentUsers.value = []
     }
   }
-}
-
-const refreshData = async () => {
-  await loadAllData()
 }
 </script>
 
